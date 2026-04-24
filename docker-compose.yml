@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: docker.io/postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: disconnect
+      POSTGRES_PASSWORD: disconnect
+      POSTGRES_DB: disconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: docker.io/redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
