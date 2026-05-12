@@ -7,6 +7,7 @@ const HUB_ITEMS = [
   { label: 'Habits', icon: 'leaf-outline' as const, screen: 'Habits', color: '#4ade80' },
   { label: 'Challenges', icon: 'trophy-outline' as const, screen: 'Challenges', color: '#f59e0b' },
   { label: 'Check In', icon: 'heart-outline' as const, screen: 'CheckIn', color: '#4ade80' },
+  { label: 'Focus', icon: 'timer-outline' as const, screen: 'Focus', color: '#60a5fa' },
 ];
 
 export default function HubScreen({ navigation }: { navigation: any }) {

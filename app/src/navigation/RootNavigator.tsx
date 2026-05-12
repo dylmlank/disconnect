@@ -44,6 +44,7 @@ import CheckInScreen from '../screens/hub/CheckInScreen';
 import ChallengesScreen from '../screens/hub/ChallengesScreen';
 import ChallengeDetailScreen from '../screens/hub/ChallengeDetailScreen';
 import CreateChallengeScreen from '../screens/hub/CreateChallengeScreen';
+import FocusScreen from '../screens/hub/FocusScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -107,6 +108,7 @@ function HubStack() {
       <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ title: 'Challenges' }} />
       <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} options={{ title: 'Challenge' }} />
       <Stack.Screen name="CreateChallenge" component={CreateChallengeScreen} options={{ title: 'New Challenge' }} />
+      <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
     </Stack.Navigator>
   );
 }

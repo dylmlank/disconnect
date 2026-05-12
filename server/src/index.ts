@@ -21,6 +21,7 @@ import circleRoutes from './routes/circles';
 import habitRoutes from './routes/habits';
 import checkinRoutes from './routes/checkins';
 import challengeRoutes from './routes/challenges';
+import focusRoutes from './routes/focus';
 
 const app = express();
 const server = createServer(app);
@@ -44,6 +45,7 @@ app.use('/api/circles', circleRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/checkins', checkinRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/focus', focusRoutes);
 
 app.use(errorHandler);
 
