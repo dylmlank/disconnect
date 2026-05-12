@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/clerk-expo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
 import { setTokenProvider } from '../services/api';
 import { useScreenTime } from '../hooks/useScreenTime';
@@ -21,6 +22,7 @@ import EventListScreen from '../screens/events/EventListScreen';
 import EventDetailScreen from '../screens/events/EventDetailScreen';
 import CreateEventScreen from '../screens/events/CreateEventScreen';
 import EventChatScreen from '../screens/events/EventChatScreen';
+import MyEventsScreen from '../screens/events/MyEventsScreen';
 
 // Beacon screens
 import BeaconMapScreen from '../screens/beacons/BeaconMapScreen';
@@ -30,6 +32,9 @@ import CreateBeaconScreen from '../screens/beacons/CreateBeaconScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import BlockedUsersScreen from '../screens/profile/BlockedUsersScreen';
+
+// Onboarding
+import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,6 +55,7 @@ function EventsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#0a0a0a' }, headerTintColor: '#fff' }}>
       <Stack.Screen name="EventList" component={EventListScreen} options={{ title: 'Events' }} />
+      <Stack.Screen name="MyEvents" component={MyEventsScreen} options={{ title: 'My Events' }} />
       <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'New Event' }} />
       <Stack.Screen name="EventChat" component={EventChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.title || 'Chat' })} />
@@ -117,6 +123,14 @@ export default function RootNavigator() {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const { showNudge, dismissNudge } = useScreenTime();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+
+  // Check onboarding status
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
+      setOnboardingDone(val === 'true');
+    });
+  }, []);
 
   // Wire Clerk's getToken into the API service
   useEffect(() => {
@@ -148,7 +162,7 @@ export default function RootNavigator() {
 
   useNotifications(handleNotificationTap);
 
-  if (!isLoaded) {
+  if (!isLoaded || onboardingDone === null) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#4ade80" />
@@ -156,10 +170,11 @@ export default function RootNavigator() {
     );
   }
 
-  // Three-state routing:
+  // Four-state routing:
   // 1. Not signed in → AuthStack (phone entry + verify code)
   // 2. Signed in but no profile → CreateProfile
-  // 3. Signed in with profile → MainTabs
+  // 3. Signed in with profile but onboarding not done → Onboarding
+  // 4. Signed in with profile + onboarding done → MainTabs
   let content;
   if (!isSignedIn) {
     content = <AuthStack />;
@@ -168,6 +183,12 @@ export default function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
       </Stack.Navigator>
+    );
+  } else if (!onboardingDone) {
+    return (
+      <View style={{ flex: 1 }}>
+        <OnboardingScreen onComplete={() => setOnboardingDone(true)} />
+      </View>
     );
   } else {
     content = <MainTabs />;

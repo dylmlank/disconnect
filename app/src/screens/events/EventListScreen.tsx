@@ -1,11 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useLayoutEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useEventStore } from '../../store/eventStore';
 import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
 import EventCard from '../../components/EventCard';
+import ActivityFeed from '../../components/ActivityFeed';
 import { EVENT_CATEGORIES } from '../../constants/categories';
-import type { EventCategory } from '@disconnect/shared';
+import type { EventCategory, EventWithDistance } from '@disconnect/shared';
+import api from '../../services/api';
 
 export default function EventListScreen({ navigation }: { navigation: any }) {
   const { events, isLoading, fetchEvents } = useEventStore();
@@ -13,11 +16,33 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
   const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [suggested, setSuggested] = useState<EventWithDistance[]>([]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={() => navigation.navigate('MyEvents')} style={{ marginRight: 12 }}>
+          <Ionicons name="list-outline" size={22} color="#4ade80" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (!location.loading && !location.error) {
       fetchEvents(location.latitude, location.longitude, selectedCategory || undefined);
     }
+  }, [location.loading, location.latitude, location.longitude, selectedCategory]);
+
+  // Fetch suggested events when no filter is active
+  useEffect(() => {
+    if (location.loading || location.error || selectedCategory) {
+      setSuggested([]);
+      return;
+    }
+    api.get('/events/suggested', { params: { lat: location.latitude, lng: location.longitude } })
+      .then(({ data }) => setSuggested(data.events))
+      .catch(() => setSuggested([]));
   }, [location.loading, location.latitude, location.longitude, selectedCategory]);
 
   const onRefresh = useCallback(async () => {
@@ -47,6 +72,10 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
     );
   }
 
+  // Filter suggested to only show events NOT already in the main list
+  const eventIds = new Set(events.map((e) => e.id));
+  const filteredSuggested = suggested.filter((e) => !eventIds.has(e.id));
+
   return (
     <View style={styles.container}>
       {/* Category filter chips */}
@@ -69,10 +98,17 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
         )}
       />
 
+      {/* Activity feed — lightweight, non-addictive */}
+      <ActivityFeed
+        lat={location.latitude}
+        lng={location.longitude}
+        onEventPress={(eventId) => navigation.navigate('EventDetail', { eventId })}
+      />
+
       {/* Event list - finite, no infinite scroll */}
       {isLoading ? (
         <ActivityIndicator size="large" color="#4ade80" style={{ marginTop: 40 }} />
-      ) : events.length === 0 ? (
+      ) : events.length === 0 && filteredSuggested.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No events nearby</Text>
           <Text style={styles.emptyText}>Be the first to create one and get people together.</Text>
@@ -84,6 +120,25 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
           renderItem={({ item }) => (
             <EventCard event={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
           )}
+          ListHeaderComponent={
+            filteredSuggested.length > 0 ? (
+              <View style={styles.suggestedSection}>
+                <Text style={styles.suggestedTitle}>Suggested for you</Text>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={filteredSuggested}
+                  keyExtractor={(item) => `suggested-${item.id}`}
+                  contentContainerStyle={styles.suggestedList}
+                  renderItem={({ item }) => (
+                    <View style={styles.suggestedCard}>
+                      <EventCard event={item} onPress={() => navigation.navigate('EventDetail', { eventId: item.id })} />
+                    </View>
+                  )}
+                />
+              </View>
+            ) : null
+          }
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
@@ -121,6 +176,10 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 8 },
   emptyText: { fontSize: 14, color: '#888', textAlign: 'center' },
+  suggestedSection: { marginBottom: 16 },
+  suggestedTitle: { fontSize: 16, fontWeight: '700', color: '#888', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  suggestedList: { gap: 12 },
+  suggestedCard: { width: 280 },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     backgroundColor: '#4ade80', borderRadius: 24, paddingHorizontal: 20, paddingVertical: 12,

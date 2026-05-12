@@ -16,6 +16,7 @@ import eventRoutes from './routes/events';
 import beaconRoutes from './routes/beacons';
 import userRoutes from './routes/users';
 import blockRoutes from './routes/blocks';
+import activityRoutes from './routes/activity';
 
 const app = express();
 const server = createServer(app);
@@ -34,6 +35,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/beacons', beaconRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/blocks', blockRoutes);
+app.use('/api/activity', activityRoutes);
 
 app.use(errorHandler);
 

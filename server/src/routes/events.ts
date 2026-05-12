@@ -7,6 +7,8 @@ import { CATEGORY_IDS } from '@disconnect/shared';
 import {
   findEventsNearby,
   findEventById,
+  findMyEvents,
+  findSuggestedEvents,
   createEvent,
   addRsvp,
   removeRsvp,
@@ -14,6 +16,7 @@ import {
   deleteEvent,
 } from '../models/event';
 import { getChatMessages } from '../models/chatMessage';
+import { findUserById } from '../models/user';
 
 const router = Router();
 
@@ -60,6 +63,41 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     userId: req.user.userId,
     isMinor: req.user.isMinor,
     category: category as typeof CATEGORY_IDS[number] | undefined,
+  });
+
+  res.json({ events });
+});
+
+// GET /api/events/mine
+router.get('/mine', authenticate, async (req: Request, res: Response) => {
+  const result = await findMyEvents(req.user.userId);
+  res.json(result);
+});
+
+// GET /api/events/suggested
+router.get('/suggested', authenticate, async (req: Request, res: Response) => {
+  const parsed = listEventsSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
+    return;
+  }
+
+  const { lat, lng, radius } = parsed.data;
+  const radiusMeters = (radius || DEFAULT_RADIUS_MILES) * MILES_TO_METERS;
+
+  const user = await findUserById(req.user.userId);
+  if (!user || !user.interests || user.interests.length === 0) {
+    res.json({ events: [] });
+    return;
+  }
+
+  const events = await findSuggestedEvents({
+    lat,
+    lng,
+    radiusMeters,
+    userId: req.user.userId,
+    isMinor: req.user.isMinor,
+    interests: user.interests,
   });
 
   res.json({ events });

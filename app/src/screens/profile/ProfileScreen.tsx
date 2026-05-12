@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
@@ -7,11 +7,23 @@ import { INTERESTS } from '../../constants/interests';
 import api from '../../services/api';
 import { API_URL } from '../../constants/config';
 
+interface UserStats {
+  eventsThisMonth: number;
+  eventsAllTime: number;
+  weeklyStreak: number;
+  beaconsDropped: number;
+}
+
 export default function ProfileScreen({ navigation }: { navigation: any }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const { weeklyMinutes } = useScreenTime();
   const [uploading, setUploading] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
+
+  useEffect(() => {
+    api.get('/users/me/stats').then(({ data }) => setStats(data.stats)).catch(() => {});
+  }, []);
 
   if (!user) return null;
 
@@ -107,6 +119,35 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         </Text>
       </View>
 
+      {/* Stats card */}
+      {stats && (
+        <View style={styles.statsCard}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{stats.eventsThisMonth}</Text>
+              <Text style={styles.statLabel}>This month</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{stats.eventsAllTime}</Text>
+              <Text style={styles.statLabel}>All time</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, styles.streakValue]}>{stats.weeklyStreak}</Text>
+              <Text style={styles.statLabel}>Week streak</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{stats.beaconsDropped}</Text>
+              <Text style={styles.statLabel}>Beacons</Text>
+            </View>
+          </View>
+          {stats.weeklyStreak > 0 && (
+            <Text style={styles.streakMessage}>
+              {stats.weeklyStreak >= 4 ? "You're on fire! Keep going outside." : `${stats.weeklyStreak} week streak — nice!`}
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* Actions */}
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('EditProfile')}>
         <Text style={styles.actionText}>Edit Profile</Text>
@@ -151,6 +192,16 @@ const styles = StyleSheet.create({
   screenTimeLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
   screenTimeValue: { fontSize: 36, fontWeight: '800', color: '#4ade80', marginVertical: 4 },
   screenTimeSubtext: { fontSize: 13, color: '#666' },
+  statsCard: {
+    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: '100%',
+    marginTop: 12, borderWidth: 1, borderColor: '#262626',
+  },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statValue: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  streakValue: { color: '#f59e0b' },
+  statLabel: { fontSize: 11, color: '#888', marginTop: 4, textTransform: 'uppercase' },
+  streakMessage: { fontSize: 13, color: '#f59e0b', textAlign: 'center', marginTop: 12 },
   actionButton: {
     width: '100%', padding: 16, borderRadius: 12, backgroundColor: '#1a1a1a',
     marginTop: 12, alignItems: 'center',

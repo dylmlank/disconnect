@@ -2,13 +2,20 @@ import { create } from 'zustand';
 import api from '../services/api';
 import type { EventWithDistance, EventDetail, EventCategory } from '@disconnect/shared';
 
+interface MyEvents {
+  hosting: EventWithDistance[];
+  attending: EventWithDistance[];
+}
+
 interface EventState {
   events: EventWithDistance[];
   currentEvent: EventDetail | null;
+  myEvents: MyEvents | null;
   isLoading: boolean;
 
   fetchEvents: (lat: number, lng: number, category?: EventCategory) => Promise<void>;
   fetchEvent: (id: string) => Promise<void>;
+  fetchMyEvents: () => Promise<void>;
   rsvp: (id: string) => Promise<void>;
   unRsvp: (id: string) => Promise<void>;
   createEvent: (data: {
@@ -28,6 +35,7 @@ interface EventState {
 export const useEventStore = create<EventState>((set) => ({
   events: [],
   currentEvent: null,
+  myEvents: null,
   isLoading: false,
 
   fetchEvents: async (lat, lng, category) => {
@@ -47,6 +55,16 @@ export const useEventStore = create<EventState>((set) => ({
     try {
       const { data } = await api.get(`/events/${id}`);
       set({ currentEvent: data.event });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchMyEvents: async () => {
+    set({ isLoading: true });
+    try {
+      const { data } = await api.get('/events/mine');
+      set({ myEvents: { hosting: data.hosting, attending: data.attending } });
     } finally {
       set({ isLoading: false });
     }

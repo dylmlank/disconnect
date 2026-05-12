@@ -2,6 +2,40 @@ import { db } from '../config/database';
 import { getBlockedUserIds } from './block';
 import { toUserProfile } from './user';
 
+// Maps user interests to relevant event categories
+const INTEREST_TO_CATEGORY: Record<string, string[]> = {
+  hiking: ['outdoors'],
+  running: ['outdoors', 'sports'],
+  cycling: ['outdoors', 'sports'],
+  yoga: ['sports'],
+  climbing: ['outdoors', 'sports'],
+  swimming: ['sports'],
+  basketball: ['sports'],
+  soccer: ['sports'],
+  tennis: ['sports'],
+  skateboarding: ['sports', 'outdoors'],
+  surfing: ['sports', 'outdoors'],
+  photography: ['creative', 'outdoors'],
+  painting: ['creative'],
+  music: ['music', 'creative'],
+  reading: ['study', 'coffee'],
+  writing: ['creative', 'study'],
+  cooking: ['food'],
+  gardening: ['outdoors', 'volunteering'],
+  'board-games': ['games'],
+  'video-games': ['games'],
+  film: ['creative'],
+  volunteering: ['volunteering'],
+  meditation: ['outdoors'],
+  camping: ['outdoors'],
+  coffee: ['coffee'],
+  dogs: ['outdoors'],
+  fitness: ['sports'],
+  dancing: ['music'],
+  'language-learning': ['study'],
+  travel: ['outdoors', 'food'],
+};
+
 export interface EventRow {
   id: string;
   creator_id: string;
@@ -218,5 +252,174 @@ export async function hasRsvp(eventId: string, userId: string): Promise<boolean>
 export async function deleteEvent(eventId: string, userId: string): Promise<boolean> {
   const deleted = await db('events').where({ id: eventId, creator_id: userId }).del();
   return deleted > 0;
+}
+
+export async function findMyEvents(userId: string) {
+  // Events the user created
+  const hostingRows = await db('events')
+    .select(
+      'events.*',
+      db.raw(`ST_Y(events.location::geometry) as lat`),
+      db.raw(`ST_X(events.location::geometry) as lng`),
+      db.raw(`(SELECT COUNT(*) FROM event_rsvps WHERE event_rsvps.event_id = events.id)::int as attendee_count`),
+      db.raw(`true as has_rsvp`), // creator always RSVP'd
+    )
+    .join('users as creator', 'events.creator_id', 'creator.id')
+    .select(
+      'creator.id as creator_id',
+      'creator.first_name as creator_first_name',
+      'creator.bio as creator_bio',
+      'creator.interests as creator_interests',
+      'creator.photo_url as creator_photo_url',
+      'creator.is_minor as creator_is_minor',
+    )
+    .where('events.creator_id', userId)
+    .orderBy('events.starts_at', 'asc');
+
+  // Events the user RSVP'd to (but didn't create)
+  const attendingRows = await db('events')
+    .select(
+      'events.*',
+      db.raw(`ST_Y(events.location::geometry) as lat`),
+      db.raw(`ST_X(events.location::geometry) as lng`),
+      db.raw(`(SELECT COUNT(*) FROM event_rsvps WHERE event_rsvps.event_id = events.id)::int as attendee_count`),
+      db.raw(`true as has_rsvp`),
+    )
+    .join('event_rsvps', 'events.id', 'event_rsvps.event_id')
+    .join('users as creator', 'events.creator_id', 'creator.id')
+    .select(
+      'creator.id as creator_id',
+      'creator.first_name as creator_first_name',
+      'creator.bio as creator_bio',
+      'creator.interests as creator_interests',
+      'creator.photo_url as creator_photo_url',
+      'creator.is_minor as creator_is_minor',
+    )
+    .where('event_rsvps.user_id', userId)
+    .whereNot('events.creator_id', userId)
+    .orderBy('events.starts_at', 'asc');
+
+  const mapRow = (row: Record<string, unknown>) => ({
+    id: row.id as string,
+    creatorId: row.creator_id as string,
+    title: row.title as string,
+    description: row.description as string | null,
+    location: { latitude: row.lat as number, longitude: row.lng as number },
+    address: row.address as string | null,
+    startsAt: (row.starts_at as Date).toISOString(),
+    endsAt: row.ends_at ? (row.ends_at as Date).toISOString() : null,
+    category: row.category as string,
+    maxAttendees: row.max_attendees as number,
+    allAges: row.all_ages as boolean,
+    createdAt: (row.created_at as Date).toISOString(),
+    distance: 0,
+    attendeeCount: row.attendee_count as number,
+    hasRsvp: true,
+    creator: {
+      id: row.creator_id as string,
+      firstName: row.creator_first_name as string,
+      bio: row.creator_bio as string | null,
+      interests: row.creator_interests as string[],
+      photoUrl: row.creator_photo_url as string | null,
+      isMinor: row.creator_is_minor as boolean,
+    },
+  });
+
+  return {
+    hosting: hostingRows.map(mapRow),
+    attending: attendingRows.map(mapRow),
+  };
+}
+
+export function getSuggestedCategories(interests: string[]): string[] {
+  const categories = new Set<string>();
+  for (const interest of interests) {
+    const mapped = INTEREST_TO_CATEGORY[interest];
+    if (mapped) {
+      mapped.forEach((c) => categories.add(c));
+    }
+  }
+  return Array.from(categories);
+}
+
+export async function findSuggestedEvents(options: {
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  userId: string;
+  isMinor: boolean;
+  interests: string[];
+}) {
+  const { lat, lng, radiusMeters, userId, isMinor, interests } = options;
+  const categories = getSuggestedCategories(interests);
+  if (categories.length === 0) return [];
+
+  const blockedIds = await getBlockedUserIds(userId);
+
+  let query = db('events')
+    .select(
+      'events.*',
+      db.raw(`ST_Y(events.location::geometry) as lat`),
+      db.raw(`ST_X(events.location::geometry) as lng`),
+      db.raw(
+        `ST_Distance(events.location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography) as distance`,
+        [lng, lat],
+      ),
+      db.raw(`(SELECT COUNT(*) FROM event_rsvps WHERE event_rsvps.event_id = events.id)::int as attendee_count`),
+      db.raw(
+        `EXISTS(SELECT 1 FROM event_rsvps WHERE event_rsvps.event_id = events.id AND event_rsvps.user_id = ?) as has_rsvp`,
+        [userId],
+      ),
+    )
+    .join('users as creator', 'events.creator_id', 'creator.id')
+    .select(
+      'creator.id as creator_id',
+      'creator.first_name as creator_first_name',
+      'creator.bio as creator_bio',
+      'creator.interests as creator_interests',
+      'creator.photo_url as creator_photo_url',
+      'creator.is_minor as creator_is_minor',
+    )
+    .whereRaw(`ST_DWithin(events.location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ?)`, [
+      lng, lat, radiusMeters,
+    ])
+    .where('events.starts_at', '>', new Date())
+    .whereIn('events.category', categories);
+
+  if (isMinor) {
+    query = query.where('events.all_ages', true);
+  }
+
+  if (blockedIds.length > 0) {
+    query = query.whereNotIn('events.creator_id', blockedIds);
+  }
+
+  const rows = await query.orderBy('events.starts_at', 'asc').limit(10);
+
+  return rows.map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    creatorId: row.creator_id as string,
+    title: row.title as string,
+    description: row.description as string | null,
+    location: { latitude: row.lat as number, longitude: row.lng as number },
+    address: row.address as string | null,
+    startsAt: (row.starts_at as Date).toISOString(),
+    endsAt: row.ends_at ? (row.ends_at as Date).toISOString() : null,
+    category: row.category as string,
+    maxAttendees: row.max_attendees as number,
+    allAges: row.all_ages as boolean,
+    createdAt: (row.created_at as Date).toISOString(),
+    distance: Math.round(row.distance as number),
+    attendeeCount: row.attendee_count as number,
+    hasRsvp: row.has_rsvp as boolean,
+    creator: {
+      id: row.creator_id as string,
+      firstName: row.creator_first_name as string,
+      bio: row.creator_bio as string | null,
+      interests: row.creator_interests as string[],
+      photoUrl: row.creator_photo_url as string | null,
+      isMinor: row.creator_is_minor as boolean,
+    },
+  }));
 }
 
