@@ -22,6 +22,7 @@ import habitRoutes from './routes/habits';
 import checkinRoutes from './routes/checkins';
 import challengeRoutes from './routes/challenges';
 import focusRoutes from './routes/focus';
+import reactionRoutes from './routes/reactions';
 
 const app = express();
 const server = createServer(app);
@@ -46,6 +47,7 @@ app.use('/api/habits', habitRoutes);
 app.use('/api/checkins', checkinRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/focus', focusRoutes);
+app.use('/api/reactions', reactionRoutes);
 
 app.use(errorHandler);
 
