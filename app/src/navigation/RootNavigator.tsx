@@ -41,6 +41,9 @@ import CreateCircleScreen from '../screens/hub/CreateCircleScreen';
 import JoinCircleScreen from '../screens/hub/JoinCircleScreen';
 import HabitsScreen from '../screens/hub/HabitsScreen';
 import CheckInScreen from '../screens/hub/CheckInScreen';
+import ChallengesScreen from '../screens/hub/ChallengesScreen';
+import ChallengeDetailScreen from '../screens/hub/ChallengeDetailScreen';
+import CreateChallengeScreen from '../screens/hub/CreateChallengeScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -101,6 +104,9 @@ function HubStack() {
       <Stack.Screen name="JoinCircle" component={JoinCircleScreen} options={{ title: 'Join Circle' }} />
       <Stack.Screen name="Habits" component={HabitsScreen} options={{ title: 'Habits' }} />
       <Stack.Screen name="CheckIn" component={CheckInScreen} options={{ title: 'Check In' }} />
+      <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ title: 'Challenges' }} />
+      <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} options={{ title: 'Challenge' }} />
+      <Stack.Screen name="CreateChallenge" component={CreateChallengeScreen} options={{ title: 'New Challenge' }} />
     </Stack.Navigator>
   );
 }
