@@ -33,6 +33,9 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import BlockedUsersScreen from '../screens/profile/BlockedUsersScreen';
 
+// Hub screens
+import HubScreen from '../screens/hub/HubScreen';
+
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
 
@@ -82,6 +85,14 @@ function ProfileStack() {
   );
 }
 
+function HubStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#0a0a0a' }, headerTintColor: '#fff' }}>
+      <Stack.Screen name="Hub" component={HubScreen} options={{ title: 'Hub' }} />
+    </Stack.Navigator>
+  );
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -99,6 +110,10 @@ function MainTabs() {
       <Tab.Screen name="BeaconsTab" component={BeaconsStack} options={{
         title: 'Map',
         tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
+      }} />
+      <Tab.Screen name="HubTab" component={HubStack} options={{
+        title: 'Hub',
+        tabBarIcon: ({ color, size }) => <Ionicons name="flash-outline" size={size} color={color} />,
       }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{
         title: 'Profile',
