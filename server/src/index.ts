@@ -18,6 +18,8 @@ import userRoutes from './routes/users';
 import blockRoutes from './routes/blocks';
 import activityRoutes from './routes/activity';
 import circleRoutes from './routes/circles';
+import habitRoutes from './routes/habits';
+import checkinRoutes from './routes/checkins';
 
 const app = express();
 const server = createServer(app);
@@ -38,6 +40,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/blocks', blockRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/circles', circleRoutes);
+app.use('/api/habits', habitRoutes);
+app.use('/api/checkins', checkinRoutes);
 
 app.use(errorHandler);
 

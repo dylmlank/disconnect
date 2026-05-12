@@ -39,6 +39,8 @@ import CirclesScreen from '../screens/hub/CirclesScreen';
 import CircleDetailScreen from '../screens/hub/CircleDetailScreen';
 import CreateCircleScreen from '../screens/hub/CreateCircleScreen';
 import JoinCircleScreen from '../screens/hub/JoinCircleScreen';
+import HabitsScreen from '../screens/hub/HabitsScreen';
+import CheckInScreen from '../screens/hub/CheckInScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -97,6 +99,8 @@ function HubStack() {
       <Stack.Screen name="CircleDetail" component={CircleDetailScreen} options={({ route }: { route: any }) => ({ title: route.params?.circleName || 'Circle' })} />
       <Stack.Screen name="CreateCircle" component={CreateCircleScreen} options={{ title: 'New Circle' }} />
       <Stack.Screen name="JoinCircle" component={JoinCircleScreen} options={{ title: 'Join Circle' }} />
+      <Stack.Screen name="Habits" component={HabitsScreen} options={{ title: 'Habits' }} />
+      <Stack.Screen name="CheckIn" component={CheckInScreen} options={{ title: 'Check In' }} />
     </Stack.Navigator>
   );
 }
