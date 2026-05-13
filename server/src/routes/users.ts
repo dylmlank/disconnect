@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/auth';
 import { findUserById, updateUser, toUser } from '../models/user';
 import { uploadPhoto } from '../services/storage';
 import { INTEREST_IDS, MIN_INTERESTS, MAX_INTERESTS } from '@disconnect/shared';
+import { getUserLevel } from '../models/level';
 import { db } from '../config/database';
 
 const router = Router();
@@ -218,6 +219,12 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response) => {
       beaconsDropped: Number(beaconsResult?.count || 0),
     },
   });
+});
+
+// GET /api/users/me/level
+router.get('/me/level', authenticate, async (req: Request, res: Response) => {
+  const levelData = await getUserLevel(req.user.userId);
+  res.json({ level: levelData });
 });
 
 // GET /api/users/:id — view another user's public profile (MUST be last — catches all /:id)

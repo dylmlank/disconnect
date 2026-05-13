@@ -14,6 +14,15 @@ interface UserStats {
   beaconsDropped: number;
 }
 
+interface LevelInfo {
+  xp: number;
+  level: number;
+  levelName: string;
+  emoji: string;
+  progressPercent: number;
+  nextLevelXp: number | null;
+}
+
 export default function ProfileScreen({ navigation }: { navigation: any }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -21,6 +30,7 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
   const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [focusMinutes, setFocusMinutes] = useState(0);
+  const [levelInfo, setLevelInfo] = useState<LevelInfo | null>(null);
 
   useEffect(() => {
     api.get('/users/me/stats').then(({ data }) => setStats(data.stats)).catch(() => {});
@@ -33,6 +43,7 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
       }) || [];
       setFocusMinutes(thisWeek.reduce((sum: number, s: any) => sum + s.durationMinutes, 0));
     }).catch(() => {});
+    api.get('/users/me/level').then(({ data }) => setLevelInfo(data)).catch(() => {});
   }, []);
 
   if (!user) return null;
@@ -105,6 +116,22 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
 
       <Text style={styles.name}>{user.firstName}</Text>
       {user.isMinor && <Text style={styles.ageBadge}>Under 18</Text>}
+
+      {/* Level + XP bar */}
+      {levelInfo && (
+        <View style={styles.levelBlock}>
+          <Text style={styles.levelText}>
+            {levelInfo.emoji} Level {levelInfo.level} — {levelInfo.levelName}
+          </Text>
+          <View style={styles.xpBarTrack}>
+            <View style={[styles.xpBarFill, { width: `${levelInfo.progressPercent}%` as any }]} />
+          </View>
+          {levelInfo.nextLevelXp !== null && (
+            <Text style={styles.xpSubtext}>{levelInfo.xp} / {levelInfo.nextLevelXp} XP</Text>
+          )}
+        </View>
+      )}
+
       {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
 
       {/* Interests */}
@@ -176,6 +203,10 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={styles.actionText}>Badges</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('WeeklyRecap')}>
+        <Text style={styles.actionText}>Weekly Recap</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.actionText}>Settings</Text>
       </TouchableOpacity>
@@ -197,6 +228,13 @@ const styles = StyleSheet.create({
     fontSize: 12, color: '#f59e0b', fontWeight: '600', marginTop: 4,
     backgroundColor: '#2a2000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6,
   },
+  levelBlock: { alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 4 },
+  levelText: { fontSize: 15, fontWeight: '700', color: '#aaa', marginBottom: 8 },
+  xpBarTrack: {
+    width: '70%', height: 4, backgroundColor: '#262626', borderRadius: 2, overflow: 'hidden',
+  },
+  xpBarFill: { height: '100%', backgroundColor: '#4ade80', borderRadius: 2 },
+  xpSubtext: { fontSize: 11, color: '#555', marginTop: 4 },
   bio: { fontSize: 15, color: '#aaa', textAlign: 'center', marginTop: 8 },
   interests: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16, justifyContent: 'center' },
   chip: {

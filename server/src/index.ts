@@ -29,6 +29,9 @@ import reportRoutes from './routes/reports';
 import discoverRoutes from './routes/discover';
 import notificationRoutes from './routes/notifications';
 import badgeRoutes from './routes/badges';
+import vibeRoutes from './routes/vibes';
+import recapRoutes from './routes/recap';
+import roomRoutes from './routes/rooms';
 
 const app = express();
 const server = createServer(app);
@@ -69,6 +72,9 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/discover', discoverRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/vibes', vibeRoutes);
+app.use('/api/recap', recapRoutes);
+app.use('/api/rooms', roomRoutes);
 
 app.use(errorHandler);
 
