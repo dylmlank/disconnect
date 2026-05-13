@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { rateLimit } from '../middleware/rateLimit';
 import { CURATED_HABIT_IDS } from '@disconnect/shared';
 import {
   getUserHabits,
@@ -35,7 +36,7 @@ router.get('/streaks', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/habits
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, rateLimit(60, 30, 'habit_write'), async (req: Request, res: Response) => {
   const parsed = addHabitSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
@@ -73,7 +74,7 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/habits/:habitId/log
-router.post('/:habitId/log', authenticate, async (req: Request, res: Response) => {
+router.post('/:habitId/log', authenticate, rateLimit(60, 30, 'habit_write'), async (req: Request, res: Response) => {
   const photoUrl = typeof req.body.photoUrl === 'string' ? req.body.photoUrl : undefined;
   const log = await logHabit(req.user.userId, req.params.habitId as string, photoUrl);
   res.json({ log });

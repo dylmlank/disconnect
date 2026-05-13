@@ -84,7 +84,10 @@ router.get('/photos', authenticate, async (req: Request, res: Response) => {
     }))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
-  res.json({ photos });
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  res.json({ photos: photos.slice(offset, offset + limit), total: photos.length });
 });
 
 export default router;

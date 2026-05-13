@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { rateLimit } from '../middleware/rateLimit';
 import { addReaction, removeReaction } from '../models/reaction';
 import type { ReactionTargetType } from '@disconnect/shared';
 
@@ -16,7 +17,7 @@ const createReactionSchema = z.object({
 });
 
 // POST /api/reactions
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, rateLimit(60, 30, 'reaction_write'), async (req: Request, res: Response) => {
   const parsed = createReactionSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });

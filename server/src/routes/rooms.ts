@@ -18,6 +18,10 @@ const createRoomSchema = z.object({
   longitude: z.number().optional(),
 });
 
+const leaveSchema = z.object({
+  minutesSpent: z.number().int().min(0).max(720).optional().default(0),
+});
+
 // GET /api/rooms
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
@@ -65,14 +69,19 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/rooms/:id/join
-router.post('/:id/join', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/join', authenticate, rateLimit(60, 20, 'room_join'), async (req: Request, res: Response) => {
   await joinRoom(req.params.id as string);
   res.json({ success: true });
 });
 
 // POST /api/rooms/:id/leave
-router.post('/:id/leave', authenticate, async (req: Request, res: Response) => {
-  const minutesSpent = req.body.minutesSpent || 0;
+router.post('/:id/leave', authenticate, rateLimit(60, 20, 'room_join'), async (req: Request, res: Response) => {
+  const parsed = leaveSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
+    return;
+  }
+  const minutesSpent = parsed.data.minutesSpent;
   await leaveRoom(req.params.id as string, minutesSpent);
   res.json({ success: true });
 });

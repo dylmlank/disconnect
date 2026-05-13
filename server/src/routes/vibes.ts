@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { rateLimit } from '../middleware/rateLimit';
 import { setVibe, getTodayVibe, getCircleVibes, getVibeHistory, VIBE_OPTIONS, VibeType } from '../models/vibe';
 
 const router = Router();
@@ -12,7 +13,7 @@ const setVibeSchema = z.object({
 });
 
 // POST /api/vibes
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, rateLimit(60, 10, 'vibe_write'), async (req: Request, res: Response) => {
   const parsed = setVibeSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });

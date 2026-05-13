@@ -99,12 +99,14 @@ router.delete('/:id/members/:userId', authenticate, async (req: Request, res: Re
 
 // GET /api/circles/:id/feed
 router.get('/:id/feed', authenticate, async (req: Request, res: Response) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  const offset = parseInt(req.query.offset as string) || 0;
   const feed = await getCircleFeed(req.params.id as string, req.user.userId, req.query.since as string | undefined);
   if (feed === null) {
     res.status(404).json({ error: 'not_found', message: 'Circle not found or you are not a member' });
     return;
   }
-  res.json({ activity: feed });
+  res.json({ activity: feed.slice(offset, offset + limit), total: feed.length });
 });
 
 const messageSchema = z.object({

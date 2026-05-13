@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { rateLimit } from '../middleware/rateLimit';
 import {
   startSession,
   completeSession,
@@ -12,13 +13,13 @@ import {
 const router = Router();
 
 const startSchema = z.object({
-  durationMinutes: z.number().int().min(1).max(480),
+  durationMinutes: z.number().int().min(5).max(180),
   intention: z.string().max(100).optional(),
   circleId: z.string().uuid().optional(),
 });
 
 // POST /api/focus — start a session
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, rateLimit(60, 10, 'focus_write'), async (req: Request, res: Response) => {
   const parsed = startSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
@@ -31,7 +32,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/focus/:id/complete
-router.post('/:id/complete', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/complete', authenticate, rateLimit(60, 10, 'focus_write'), async (req: Request, res: Response) => {
   const session = await completeSession(req.params.id as string, req.user.userId);
   if (!session) {
     res.status(404).json({ error: 'not_found', message: 'Active session not found' });
@@ -41,7 +42,7 @@ router.post('/:id/complete', authenticate, async (req: Request, res: Response) =
 });
 
 // POST /api/focus/:id/cancel
-router.post('/:id/cancel', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/cancel', authenticate, rateLimit(60, 10, 'focus_write'), async (req: Request, res: Response) => {
   const session = await cancelSession(req.params.id as string, req.user.userId);
   if (!session) {
     res.status(404).json({ error: 'not_found', message: 'Active session not found' });

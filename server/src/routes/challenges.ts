@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import { requireAdult } from '../middleware/ageGate';
+import { rateLimit } from '../middleware/rateLimit';
 import {
   getPublicChallenges,
   getUserChallenges,
@@ -62,7 +63,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/challenges
-router.post('/', authenticate, requireAdult, async (req: Request, res: Response) => {
+router.post('/', authenticate, requireAdult, rateLimit(3600, 10, 'create_challenge'), async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
@@ -84,7 +85,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/challenges/:id/join
-router.post('/:id/join', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/join', authenticate, rateLimit(60, 20, 'challenge_write'), async (req: Request, res: Response) => {
   const ok = await joinChallenge(req.params.id as string, req.user.userId);
   if (!ok) {
     res.status(404).json({ error: 'not_found', message: 'Challenge not found' });
@@ -94,7 +95,7 @@ router.post('/:id/join', authenticate, async (req: Request, res: Response) => {
 });
 
 // POST /api/challenges/:id/log
-router.post('/:id/log', authenticate, async (req: Request, res: Response) => {
+router.post('/:id/log', authenticate, rateLimit(60, 20, 'challenge_write'), async (req: Request, res: Response) => {
   const parsed = logDaySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import { rateLimit } from '../middleware/rateLimit';
 import { createCheckIn, getTodayCheckIn, getCheckInHistory } from '../models/checkin';
 
 const router = Router();
@@ -14,7 +15,7 @@ const createCheckInSchema = z.object({
 });
 
 // POST /api/checkins
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, rateLimit(3600, 5, 'create_checkin'), async (req: Request, res: Response) => {
   const parsed = createCheckInSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
