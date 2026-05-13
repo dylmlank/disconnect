@@ -6,6 +6,10 @@
     "server",
     "app"
   ],
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
   "scripts": {
     "server:dev": "npm run dev --workspace=server",
     "server:build": "npm run build --workspace=server",
