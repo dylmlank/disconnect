@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import { createServer } from 'http';
 import { env } from './config/env';
 import { connectRedis } from './config/redis';
@@ -32,6 +33,11 @@ app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+
+// Serve landing page in production
+if (env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../landing')));
+}
 
 app.get('/api/health', async (_req, res) => {
   try {

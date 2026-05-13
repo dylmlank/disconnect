@@ -13,6 +13,7 @@ RUN npm ci --workspace=shared --workspace=server
 # Copy source
 COPY shared/ shared/
 COPY server/ server/
+COPY landing/ landing/
 
 # Build shared types
 RUN npm run build --workspace=shared

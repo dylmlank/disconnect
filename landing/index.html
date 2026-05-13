@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disconnect — The app you open to close your phone</title>
+  <meta name="description" content="Disconnect is a social productivity app that helps you spend less time on screens and more time living. Evidence-backed habits, focus sessions, and real-world meetups.">
+  <meta property="og:title" content="Disconnect — Less Screen, More Life">
+  <meta property="og:description" content="The app designed to get you off your phone and into the world. Join challenges, track habits, focus together.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #1a1a1a;
+      --border: #262626;
+      --text: #ffffff;
+      --muted: #888888;
+      --accent: #4ade80;
+      --accent-dark: #0a2a0a;
+      --blue: #60a5fa;
+      --amber: #f59e0b;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 100px 0 80px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 40px;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 16px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Stats bar */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Features */
+    .features {
+      padding: 80px 0;
+    }
+
+    .features h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Research section */
+    .research {
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .research h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .research > p {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    .research-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .research-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .research-item strong {
+      color: var(--accent);
+    }
+
+    .research-item .citation {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 8px;
+    }
+
+    /* Waitlist */
+    .waitlist {
+      padding: 80px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    .waitlist h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .waitlist p {
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 12px;
+      max-width: 420px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .waitlist-form input {
+      flex: 1;
+      min-width: 200px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .waitlist-form input:focus {
+      border-color: var(--accent);
+    }
+
+    .waitlist-form button {
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .waitlist-form button:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: #444;
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      margin: 0 12px;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>The app you open to<br><span>close your phone.</span></h1>
+      <p>Disconnect helps you spend less time on screens and more time living — with evidence-backed habits, focus sessions, and real-world meetups.</p>
+      <a href="#waitlist" class="hero-cta">Join the Waitlist →</a>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-value">10</div>
+        <div class="stat-label">Research-backed habits</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">&lt;2 min</div>
+        <div class="stat-label">Average session</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Infinite scrolls</div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+      <h2>Everything you need. Nothing you don't.</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Hub</h3>
+          <p>Your daily wellness dashboard. Track habits, check in, and start focus sessions — all in under 2 minutes.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Circles</h3>
+          <p>Small groups (3-8 people) for real accountability. See each other's progress. No rankings, no shame.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏆</div>
+          <h3>Challenges</h3>
+          <p>7-30 day programs backed by research. Phone-Free Mornings, Deep Work Week, 30-Day Walk, and more.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>Focus Sessions</h3>
+          <p>Timed co-working with friends. See who's focusing. No video, no chat — just presence and a timer.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Events</h3>
+          <p>Discover real-world meetups nearby. Coffee, sports, study sessions, volunteering. Show up, not scroll.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <h3>Beacons</h3>
+          <p>Drop a beacon: "I'm at the park, come hang." Spontaneous connection, expires in 2 hours.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Research -->
+    <section class="research">
+      <h2>Built on science, not engagement hacks.</h2>
+      <p>Every feature in Disconnect is backed by peer-reviewed research.</p>
+      <div class="research-grid">
+        <div class="research-item">
+          <p><strong>Social accountability</strong> raises goal follow-through by 65%.</p>
+          <p class="citation">Gollwitzer et al. — Implementation Intentions</p>
+        </div>
+        <div class="research-item">
+          <p><strong>30 min in nature</strong> reduces cortisol by 21%.</p>
+          <p class="citation">Hunter 2019 — Frontiers in Psychology</p>
+        </div>
+        <div class="research-item">
+          <p><strong>Context switching</strong> costs 23 minutes per interruption to recover.</p>
+          <p class="citation">Gloria Mark — UC Irvine</p>
+        </div>
+        <div class="research-item">
+          <p><strong>Gratitude journaling</strong> produces sustained happiness at 6-month follow-up.</p>
+          <p class="citation">Seligman et al. 2005 RCT (d=0.36)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waitlist -->
+    <section class="waitlist" id="waitlist">
+      <h2>Get early access.</h2>
+      <p>We're launching city by city. Join the waitlist to be first in your area.</p>
+      <form class="waitlist-form" onsubmit="handleSubmit(event)">
+        <input type="email" id="email" placeholder="your@email.com" required>
+        <button type="submit">Join Waitlist</button>
+      </form>
+      <p id="waitlist-success" style="display:none; color: #4ade80; margin-top: 16px; font-weight: 600;">You're on the list! We'll be in touch.</p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2026 Disconnect. The best social network is the one that makes you put your phone down.</p>
+      <p style="margin-top: 12px;">
+        <a href="/terms.html">Terms of Service</a>
+        <a href="/privacy.html">Privacy Policy</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    function handleSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      // In production, POST to your API or a service like Mailchimp/ConvertKit
+      console.log('Waitlist signup:', email);
+      document.getElementById('email').value = '';
+      document.getElementById('waitlist-success').style.display = 'block';
+      e.target.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
