@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuth } from '@clerk/clerk-expo';
 import { useAuthStore } from '../../store/authStore';
 import { useScreenTime } from '../../hooks/useScreenTime';
 import { INTERESTS } from '../../constants/interests';
@@ -18,7 +17,6 @@ interface UserStats {
 export default function ProfileScreen({ navigation }: { navigation: any }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
-  const { signOut } = useAuth();
   const { weeklyMinutes } = useScreenTime();
   const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -89,20 +87,6 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          setUser(null);
-        },
-      },
-    ]);
   };
 
   return (
@@ -184,12 +168,8 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={styles.actionText}>Edit Profile</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('BlockedUsers')}>
-        <Text style={styles.actionText}>Blocked Users</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
-        <Text style={[styles.actionText, styles.logoutText]}>Log Out</Text>
+      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
+        <Text style={styles.actionText}>Settings</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -240,6 +220,4 @@ const styles = StyleSheet.create({
     marginTop: 12, alignItems: 'center',
   },
   actionText: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  logoutButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#f87171', marginTop: 24 },
-  logoutText: { color: '#f87171' },
 });

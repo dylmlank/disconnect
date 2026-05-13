@@ -88,6 +88,50 @@ router.put('/me/device-token', authenticate, async (req: Request, res: Response)
   res.json({ success: true });
 });
 
+// DELETE /api/users/me — delete account and all associated data
+router.delete('/me', authenticate, async (req: Request, res: Response) => {
+  const userId = req.user.userId;
+
+  // Delete in order respecting foreign keys
+  await db('reactions').where('user_id', userId).del();
+  await db('habit_logs').where('user_id', userId).del();
+  await db('user_habits').where('user_id', userId).del();
+  await db('check_ins').where('user_id', userId).del();
+  await db('challenge_logs').where('user_id', userId).del();
+  await db('challenge_participants').where('user_id', userId).del();
+  await db('focus_sessions').where('user_id', userId).del();
+  await db('circle_members').where('user_id', userId).del();
+  await db('beacon_interests').where('user_id', userId).del();
+  await db('event_rsvps').where('user_id', userId).del();
+  await db('event_chat_messages').where('sender_id', userId).del();
+  await db('blocks').where('blocker_id', userId).orWhere('blocked_id', userId).del();
+  await db('reports').where('reporter_id', userId).del();
+
+  // Delete circles created by user
+  const userCircles = await db('circles').where('creator_id', userId).select('id');
+  for (const c of userCircles) {
+    await db('circle_members').where('circle_id', c.id).del();
+    await db('circles').where('id', c.id).del();
+  }
+
+  // Delete events created by user
+  const userEvents = await db('events').where('creator_id', userId).select('id');
+  for (const e of userEvents) {
+    await db('event_chat_messages').where('event_id', e.id).del();
+    await db('event_rsvps').where('event_id', e.id).del();
+    await db('events').where('id', e.id).del();
+  }
+
+  // Delete beacons and challenges created by user
+  await db('beacons').where('creator_id', userId).del();
+  await db('challenges').where('creator_id', userId).del();
+
+  // Finally delete the user
+  await db('users').where('id', userId).del();
+
+  res.json({ success: true });
+});
+
 // GET /api/users/me/stats
 router.get('/me/stats', authenticate, async (req: Request, res: Response) => {
   const userId = req.user.userId;

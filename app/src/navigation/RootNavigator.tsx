@@ -32,6 +32,7 @@ import CreateBeaconScreen from '../screens/beacons/CreateBeaconScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import BlockedUsersScreen from '../screens/profile/BlockedUsersScreen';
+import SettingsScreen from '../screens/profile/SettingsScreen';
 
 // Hub screens
 import HubScreen from '../screens/hub/HubScreen';
@@ -91,6 +92,7 @@ function ProfileStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: 'Blocked Users' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>
   );
 }
