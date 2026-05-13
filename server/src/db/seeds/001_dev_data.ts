@@ -8,7 +8,23 @@ function offsetCoord(baseLat: number, baseLng: number, latOffset: number, lngOff
 }
 
 export async function seed(knex: Knex): Promise<void> {
-  // Clean existing data in reverse FK order
+  // Clean existing data in reverse FK order (all tables)
+  await knex('reactions').del();
+  await knex('reports').del();
+  await knex('badges').del();
+  await knex('vibes').del();
+  await knex('notification_preferences').del();
+  await knex('circle_messages').del();
+  await knex('habit_logs').del();
+  await knex('user_habits').del();
+  await knex('check_ins').del();
+  await knex('focus_sessions').del();
+  await knex('challenge_logs').del();
+  await knex('challenge_participants').del();
+  await knex('challenges').del();
+  await knex('study_rooms').del();
+  await knex('circle_members').del();
+  await knex('circles').del();
   await knex('beacon_interests').del();
   await knex('event_rsvps').del();
   await knex('event_chat_messages').del();
