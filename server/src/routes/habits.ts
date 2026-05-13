@@ -74,7 +74,8 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
 
 // POST /api/habits/:habitId/log
 router.post('/:habitId/log', authenticate, async (req: Request, res: Response) => {
-  const log = await logHabit(req.user.userId, req.params.habitId as string);
+  const photoUrl = typeof req.body.photoUrl === 'string' ? req.body.photoUrl : undefined;
+  const log = await logHabit(req.user.userId, req.params.habitId as string, photoUrl);
   res.json({ log });
 });
 

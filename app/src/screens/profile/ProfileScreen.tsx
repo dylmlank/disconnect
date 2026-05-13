@@ -203,6 +203,10 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={styles.actionText}>Badges</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MoodTrends')}>
+        <Text style={styles.actionText}>Mood Trends</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('WeeklyRecap')}>
         <Text style={styles.actionText}>Weekly Recap</Text>
       </TouchableOpacity>

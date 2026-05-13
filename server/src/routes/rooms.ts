@@ -2,16 +2,17 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import { rateLimit } from '../middleware/rateLimit';
-import { createRoom, getPublicRooms, getRoomById, joinRoom, leaveRoom, ROOM_VIBES } from '../models/studyRoom';
+import { createRoom, getPublicRooms, getRoomById, joinRoom, leaveRoom, ROOM_VIBES, WALK_VIBES, ALL_VIBES } from '../models/studyRoom';
 
 const router = Router();
 
-const VALID_VIBES = ROOM_VIBES.map((v) => v.id);
+const VALID_VIBES = ALL_VIBES.map((v) => v.id);
 
 const createRoomSchema = z.object({
   name: z.string().min(1).max(50),
   vibe: z.enum(VALID_VIBES as [string, ...string[]]),
   isPublic: z.boolean().optional().default(true),
+  roomType: z.enum(['study', 'walk_talk']).optional().default('study'),
   circleId: z.string().uuid().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -21,13 +22,14 @@ const createRoomSchema = z.object({
 router.get('/', authenticate, async (req: Request, res: Response) => {
   const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
   const lng = req.query.lng ? parseFloat(req.query.lng as string) : undefined;
-  const rooms = await getPublicRooms(lat, lng);
+  const roomType = (req.query.type as 'study' | 'walk_talk' | undefined);
+  const rooms = await getPublicRooms(lat, lng, roomType);
   res.json({ rooms });
 });
 
 // GET /api/rooms/vibes
 router.get('/vibes', authenticate, async (_req: Request, res: Response) => {
-  res.json({ vibes: ROOM_VIBES });
+  res.json({ vibes: ROOM_VIBES, walkVibes: WALK_VIBES });
 });
 
 // POST /api/rooms
@@ -43,6 +45,7 @@ router.post('/', authenticate, rateLimit(3600, 5, 'create_room'), async (req: Re
     name: parsed.data.name,
     vibe: parsed.data.vibe,
     isPublic: parsed.data.isPublic,
+    roomType: parsed.data.roomType,
     circleId: parsed.data.circleId,
     lat: parsed.data.latitude,
     lng: parsed.data.longitude,
@@ -75,3 +78,4 @@ router.post('/:id/leave', authenticate, async (req: Request, res: Response) => {
 });
 
 export default router;
+

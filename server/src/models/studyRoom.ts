@@ -5,6 +5,7 @@ export interface StudyRoom {
   creatorId: string;
   name: string;
   vibe: string;
+  roomType: 'study' | 'walk_talk';
   isPublic: boolean;
   circleId: string | null;
   activeCount: number;
@@ -20,11 +21,20 @@ export const ROOM_VIBES = [
   { id: 'night_owl', label: 'Night Owl', emoji: '🦉' },
 ];
 
+export const WALK_VIBES = [
+  { id: 'hot_girl_walk', label: 'Hot Girl Walk', emoji: '💅' },
+  { id: 'nature_walk', label: 'Nature Walk', emoji: '🌿' },
+  { id: 'podcast_walk', label: 'Podcast Walk', emoji: '🎧' },
+];
+
+export const ALL_VIBES = [...ROOM_VIBES, ...WALK_VIBES];
+
 export async function createRoom(data: {
   creatorId: string;
   name: string;
   vibe: string;
   isPublic: boolean;
+  roomType?: 'study' | 'walk_talk';
   circleId?: string;
   lat?: number;
   lng?: number;
@@ -35,6 +45,7 @@ export async function createRoom(data: {
     vibe: data.vibe,
     is_public: data.isPublic,
     circle_id: data.circleId || null,
+    room_type: data.roomType ?? 'study',
   };
 
   if (data.lat && data.lng) {
@@ -45,8 +56,12 @@ export async function createRoom(data: {
   return toRoom(row);
 }
 
-export async function getPublicRooms(lat?: number, lng?: number): Promise<StudyRoom[]> {
+export async function getPublicRooms(lat?: number, lng?: number, roomType?: 'study' | 'walk_talk'): Promise<StudyRoom[]> {
   let query = db('study_rooms').where('is_public', true).orderBy('active_count', 'desc').limit(20);
+
+  if (roomType) {
+    query = query.where('room_type', roomType);
+  }
 
   if (lat && lng) {
     const radiusMeters = 25 * 1609.34; // 25 miles
@@ -83,6 +98,7 @@ function toRoom(row: any): StudyRoom {
     creatorId: row.creator_id,
     name: row.name,
     vibe: row.vibe,
+    roomType: (row.room_type as 'study' | 'walk_talk') ?? 'study',
     isPublic: row.is_public,
     circleId: row.circle_id,
     activeCount: row.active_count,
@@ -90,3 +106,4 @@ function toRoom(row: any): StudyRoom {
     createdAt: row.created_at.toISOString(),
   };
 }
+

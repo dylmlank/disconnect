@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useHabitStore } from '../../store/habitStore';
 import { useCheckInStore } from '../../store/checkinStore';
 import { useCircleStore } from '../../store/circleStore';
 import { useFocusStore } from '../../store/focusStore';
-import { CURATED_HABITS } from '@disconnect/shared';
+import { CURATED_HABITS, getTodaysBite } from '@disconnect/shared';
 import api from '../../services/api';
+
+const todaysBite = getTodaysBite();
 
 const VIBE_MAP: Record<string, { emoji: string; label: string }> = {
   thriving:   { emoji: '🌊', label: 'thriving' },
@@ -56,6 +58,24 @@ export default function HubScreen({ navigation }: { navigation: any }) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Greeting */}
       <Text style={styles.title}>Today</Text>
+
+      {/* Science Bite */}
+      <View style={styles.scienceBiteCard}>
+        <View style={styles.scienceBiteTop}>
+          <Text style={styles.scienceBiteEmoji}>{todaysBite.emoji}</Text>
+          <Text style={styles.scienceBiteFact}>{todaysBite.fact}</Text>
+        </View>
+        <View style={styles.scienceBiteFooter}>
+          <Text style={styles.scienceBiteCitation}>— {todaysBite.citation}</Text>
+          <TouchableOpacity
+            onPress={() => Share.share({ message: `${todaysBite.fact} (${todaysBite.citation}) — via Disconnect` })}
+            style={styles.scienceBiteShare}
+          >
+            <Ionicons name="share-outline" size={14} color="#4ade80" />
+            <Text style={styles.scienceBiteShareText}>Share</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Vibe Check — at the top */}
       {todayVibe ? (
@@ -146,6 +166,15 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         <Text style={styles.sectionEmpty}>Focus with people nearby</Text>
       </TouchableOpacity>
 
+      {/* Walk & Talk */}
+      <TouchableOpacity style={styles.section} onPress={() => navigation.navigate('WalkTalk')} activeOpacity={0.8}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="walk-outline" size={20} color="#f59e0b" />
+          <Text style={styles.sectionTitle}>Walk & Talk</Text>
+        </View>
+        <Text style={styles.sectionEmpty}>Walk together, presence-style</Text>
+      </TouchableOpacity>
+
       {/* Challenges */}
       <TouchableOpacity style={styles.section} onPress={() => navigation.navigate('Challenges')} activeOpacity={0.8}>
         <View style={styles.sectionHeader}>
@@ -153,6 +182,15 @@ export default function HubScreen({ navigation }: { navigation: any }) {
           <Text style={styles.sectionTitle}>Challenges</Text>
         </View>
         <Text style={styles.sectionEmpty}>Join or create a challenge</Text>
+      </TouchableOpacity>
+
+      {/* Photo Feed */}
+      <TouchableOpacity style={styles.section} onPress={() => navigation.navigate('PhotoFeed')} activeOpacity={0.8}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="images-outline" size={20} color="#f59e0b" />
+          <Text style={styles.sectionTitle}>Photos</Text>
+        </View>
+        <Text style={styles.sectionEmpty}>Proof shots from your circles</Text>
       </TouchableOpacity>
 
       {/* Circles */}
@@ -239,4 +277,17 @@ const styles = StyleSheet.create({
   circleName: { fontSize: 13, color: '#ccc', backgroundColor: '#262626', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   nudge: { marginTop: 20, alignItems: 'center' },
   nudgeText: { fontSize: 13, color: '#444', fontStyle: 'italic' },
+
+  // Science bite
+  scienceBiteCard: {
+    backgroundColor: '#111', borderRadius: 14, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: '#2a3a2a',
+  },
+  scienceBiteTop: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  scienceBiteEmoji: { fontSize: 22, lineHeight: 28 },
+  scienceBiteFact: { flex: 1, fontSize: 13, color: '#ccc', lineHeight: 18, fontWeight: '500' },
+  scienceBiteFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
+  scienceBiteCitation: { fontSize: 11, color: '#555', fontStyle: 'italic', flex: 1 },
+  scienceBiteShare: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 8 },
+  scienceBiteShareText: { fontSize: 12, color: '#4ade80', fontWeight: '600' },
 });

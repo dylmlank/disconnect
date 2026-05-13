@@ -38,6 +38,7 @@ import UserProfileScreen from '../screens/profile/UserProfileScreen';
 import InviteScreen from '../screens/profile/InviteScreen';
 import BadgesScreen from '../screens/profile/BadgesScreen';
 import WeeklyRecapScreen from '../screens/profile/WeeklyRecapScreen';
+import MoodTrendsScreen from '../screens/profile/MoodTrendsScreen';
 
 // Hub screens
 import HubScreen from '../screens/hub/HubScreen';
@@ -55,6 +56,8 @@ import DiscoverScreen from '../screens/hub/DiscoverScreen';
 import CircleChatScreen from '../screens/hub/CircleChatScreen';
 import VibeCheckScreen from '../screens/hub/VibeCheckScreen';
 import StudyRoomsScreen from '../screens/hub/StudyRoomsScreen';
+import PhotoFeedScreen from '../screens/hub/PhotoFeedScreen';
+import WalkTalkScreen from '../screens/hub/WalkTalkScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -105,6 +108,7 @@ function ProfileStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="Invite" component={InviteScreen} options={{ title: 'Invite Friends' }} />
       <Stack.Screen name="Badges" component={BadgesScreen} options={{ title: 'Badges' }} />
+      <Stack.Screen name="MoodTrends" component={MoodTrendsScreen} options={{ title: 'Mood Trends' }} />
       <Stack.Screen name="WeeklyRecap" component={WeeklyRecapScreen} options={{ title: 'Weekly Recap' }} />
     </Stack.Navigator>
   );
@@ -126,6 +130,8 @@ function HubStack() {
       <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
       <Stack.Screen name="VibeCheck" component={VibeCheckScreen} options={{ title: 'Vibe Check', headerShown: false }} />
       <Stack.Screen name="StudyRooms" component={StudyRoomsScreen} options={{ title: 'Study Rooms' }} />
+      <Stack.Screen name="PhotoFeed" component={PhotoFeedScreen} options={{ title: 'Proof Feed' }} />
+      <Stack.Screen name="WalkTalk" component={WalkTalkScreen} options={{ title: 'Walk & Talk' }} />
       <Stack.Screen name="Discover" component={DiscoverScreen} options={{ title: 'Discover People' }} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="CircleChat" component={CircleChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.circleName ? `${route.params.circleName} Chat` : 'Chat' })} />

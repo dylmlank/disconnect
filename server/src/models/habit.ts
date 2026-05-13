@@ -80,7 +80,7 @@ export async function removeHabit(userId: string, habitId: string): Promise<bool
   return deleted > 0;
 }
 
-export async function logHabit(userId: string, habitId: string): Promise<HabitLog> {
+export async function logHabit(userId: string, habitId: string, photoUrl?: string): Promise<HabitLog> {
   const today = todayDate();
 
   // Idempotent — return existing if already logged
@@ -100,7 +100,7 @@ export async function logHabit(userId: string, habitId: string): Promise<HabitLo
   }
 
   const [row] = await db('habit_logs')
-    .insert({ user_id: userId, habit_id: habitId, logged_date: today })
+    .insert({ user_id: userId, habit_id: habitId, logged_date: today, photo_url: photoUrl ?? null })
     .returning('*');
 
   return {

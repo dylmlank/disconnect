@@ -32,6 +32,7 @@ import badgeRoutes from './routes/badges';
 import vibeRoutes from './routes/vibes';
 import recapRoutes from './routes/recap';
 import roomRoutes from './routes/rooms';
+import feedRoutes from './routes/feed';
 
 const app = express();
 const server = createServer(app);
@@ -75,6 +76,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/vibes', vibeRoutes);
 app.use('/api/recap', recapRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/feed', feedRoutes);
 
 app.use(errorHandler);
 
