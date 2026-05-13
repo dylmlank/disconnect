@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+.expo/
+app/
+docs/
+*.md
+.git/
+.claude/
+uploads/

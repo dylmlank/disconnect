@@ -2,7 +2,7 @@
   "expo": {
     "name": "Disconnect",
     "slug": "disconnect",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -14,7 +14,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.disconnect.app"
+      "bundleIdentifier": "com.disconnect.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Disconnect uses your location to show nearby events and beacons.",
+        "NSPhotoLibraryUsageDescription": "Upload a profile photo.",
+        "NSCameraUsageDescription": "Take a photo for your challenge log."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +27,13 @@
         "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.disconnect.app"
+      "package": "com.disconnect.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +44,19 @@
         {
           "locationWhenInUsePermission": "Disconnect uses your location to show nearby events and beacons."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Upload a profile photo or challenge proof.",
+          "cameraPermission": "Take a photo for your challenge log."
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
   }
 }
