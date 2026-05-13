@@ -5,6 +5,7 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from './services/clerkTokenCache';
 import { CLERK_PUBLISHABLE_KEY } from './constants/config';
 import RootNavigator from './navigation/RootNavigator';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function ClerkGate() {
   const { isLoaded } = useAuth();
@@ -28,9 +29,11 @@ function ClerkGate() {
 
 export default function ClerkApp() {
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <ClerkGate />
-    </ClerkProvider>
+    <ErrorBoundary>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+        <ClerkGate />
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }
 

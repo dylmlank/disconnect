@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEventStore } from '../../store/eventStore';
 import { useAuthStore } from '../../store/authStore';
@@ -17,6 +17,7 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [suggested, setSuggested] = useState<EventWithDistance[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -30,9 +31,9 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
 
   useEffect(() => {
     if (!location.loading && !location.error) {
-      fetchEvents(location.latitude, location.longitude, selectedCategory || undefined);
+      fetchEvents(location.latitude, location.longitude, selectedCategory || undefined, searchQuery || undefined);
     }
-  }, [location.loading, location.latitude, location.longitude, selectedCategory]);
+  }, [location.loading, location.latitude, location.longitude, selectedCategory, searchQuery]);
 
   // Fetch suggested events when no filter is active
   useEffect(() => {
@@ -48,9 +49,9 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
   const onRefresh = useCallback(async () => {
     if (location.loading || location.error) return;
     setRefreshing(true);
-    await fetchEvents(location.latitude, location.longitude, selectedCategory || undefined);
+    await fetchEvents(location.latitude, location.longitude, selectedCategory || undefined, searchQuery || undefined);
     setRefreshing(false);
-  }, [location, selectedCategory]);
+  }, [location, selectedCategory, searchQuery]);
 
   if (location.loading) {
     return (
@@ -78,6 +79,25 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
 
   return (
     <View style={styles.container}>
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={18} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search events..."
+          placeholderTextColor="#555"
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={18} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       {/* Category filter chips */}
       <FlatList
         horizontal
@@ -158,6 +178,13 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
+  searchContainer: {
+    flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 8,
+    backgroundColor: '#1a1a1a', borderRadius: 12, borderWidth: 1, borderColor: '#262626',
+  },
+  searchIcon: { marginLeft: 12 },
+  searchInput: { flex: 1, fontSize: 15, color: '#fff', paddingVertical: 10, paddingHorizontal: 8 },
+  clearButton: { padding: 8 },
   center: { flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center', padding: 24 },
   loadingText: { color: '#888', marginTop: 12 },
   errorText: { color: '#f87171', fontSize: 16, textAlign: 'center', marginBottom: 16 },

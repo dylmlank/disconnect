@@ -13,7 +13,7 @@ interface EventState {
   myEvents: MyEvents | null;
   isLoading: boolean;
 
-  fetchEvents: (lat: number, lng: number, category?: EventCategory) => Promise<void>;
+  fetchEvents: (lat: number, lng: number, category?: EventCategory, search?: string) => Promise<void>;
   fetchEvent: (id: string) => Promise<void>;
   fetchMyEvents: () => Promise<void>;
   rsvp: (id: string) => Promise<void>;
@@ -38,11 +38,12 @@ export const useEventStore = create<EventState>((set) => ({
   myEvents: null,
   isLoading: false,
 
-  fetchEvents: async (lat, lng, category) => {
+  fetchEvents: async (lat, lng, category, search) => {
     set({ isLoading: true });
     try {
       const params: Record<string, string | number> = { lat, lng };
       if (category) params.category = category;
+      if (search) params.search = search;
       const { data } = await api.get('/events', { params });
       set({ events: data.events });
     } finally {

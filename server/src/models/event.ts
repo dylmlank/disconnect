@@ -58,8 +58,9 @@ export async function findEventsNearby(options: {
   userId: string;
   isMinor: boolean;
   category?: string;
+  search?: string;
 }) {
-  const { lat, lng, radiusMeters, userId, isMinor, category } = options;
+  const { lat, lng, radiusMeters, userId, isMinor, category, search } = options;
   const blockedIds = await getBlockedUserIds(userId);
 
   let query = db('events')
@@ -99,6 +100,13 @@ export async function findEventsNearby(options: {
 
   if (category) {
     query = query.where('events.category', category);
+  }
+
+  if (search) {
+    query = query.where(function () {
+      this.whereILike('events.title', `%${search}%`)
+        .orWhereILike('events.description', `%${search}%`);
+    });
   }
 
   if (blockedIds.length > 0) {

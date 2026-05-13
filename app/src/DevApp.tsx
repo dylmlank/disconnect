@@ -4,6 +4,7 @@ import { setTokenProvider } from './services/api';
 import { setWsTokenProvider } from './hooks/useWebSocket';
 import { useAuthStore } from './store/authStore';
 import DevNavigator from './navigation/DevNavigator';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Dev mode: skip Clerk, auto-login as seed user "Alex"
 const DEV_CLERK_ID = 'dev_user_alex';
@@ -32,7 +33,11 @@ export default function DevApp() {
     );
   }
 
-  return <DevNavigator />;
+  return (
+    <ErrorBoundary>
+      <DevNavigator />
+    </ErrorBoundary>
+  );
 }
 
 const styles = StyleSheet.create({

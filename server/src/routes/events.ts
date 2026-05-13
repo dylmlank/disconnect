@@ -28,6 +28,7 @@ const listEventsSchema = z.object({
   lng: z.coerce.number().min(-180).max(180),
   radius: z.coerce.number().min(1).max(50).optional(),
   category: z.string().optional(),
+  search: z.string().max(100).optional(),
 });
 
 const createEventSchema = z.object({
@@ -53,7 +54,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     return;
   }
 
-  const { lat, lng, radius, category } = parsed.data;
+  const { lat, lng, radius, category, search } = parsed.data;
   const radiusMeters = (radius || DEFAULT_RADIUS_MILES) * MILES_TO_METERS;
 
   const events = await findEventsNearby({
@@ -63,6 +64,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     userId: req.user.userId,
     isMinor: req.user.isMinor,
     category: category as typeof CATEGORY_IDS[number] | undefined,
+    search,
   });
 
   res.json({ events });
