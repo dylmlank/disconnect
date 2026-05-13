@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
 import api from '../../services/api';
 import type { BeaconWithCreator } from '@disconnect/shared';
+import WebMap from '../../components/WebMap';
 
 // react-native-maps crashes on web — load conditionally
 let MapView: any = null;
@@ -92,18 +93,23 @@ export default function BeaconMapScreen({ navigation }: { navigation: any }) {
           ))}
         </MapView>
       ) : (
-        <View style={styles.webList}>
-          {beacons.length === 0 && <Text style={styles.emptyText}>No beacons nearby</Text>}
-          {beacons.map((beacon) => (
-            <TouchableOpacity key={beacon.id} style={styles.webCard} onPress={() => setSelectedBeacon(beacon)}>
-              <Text style={styles.webCardMessage}>{beacon.message}</Text>
-              {beacon.activity && <Text style={styles.webCardActivity}>{beacon.activity}</Text>}
-              <Text style={styles.webCardMeta}>
-                {beacon.creator.firstName} {beacon.placeName ? `· ${beacon.placeName}` : ''} · {beacon.interestCount} interested
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <WebMap
+          latitude={location.latitude}
+          longitude={location.longitude}
+          pins={beacons.map((b) => ({
+            id: b.id,
+            latitude: b.location.latitude,
+            longitude: b.location.longitude,
+            title: b.message,
+            subtitle: `${b.creator.firstName}${b.activity ? ` · ${b.activity}` : ''} · ${b.interestCount} interested`,
+            color: '#4ade80',
+          }))}
+          onPinPress={(pin) => {
+            const beacon = beacons.find((b) => b.id === pin.id);
+            if (beacon) setSelectedBeacon(beacon);
+          }}
+          style={styles.map}
+        />
       )}
 
       {/* Create beacon FAB - adults only */}

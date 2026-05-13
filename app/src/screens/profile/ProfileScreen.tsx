@@ -43,7 +43,19 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
       }) || [];
       setFocusMinutes(thisWeek.reduce((sum: number, s: any) => sum + s.durationMinutes, 0));
     }).catch(() => {});
-    api.get('/users/me/level').then(({ data }) => setLevelInfo(data)).catch(() => {});
+    api.get('/users/me/level').then(({ data }) => {
+      const l = data.level;
+      if (l?.current) {
+        setLevelInfo({
+          xp: l.xp,
+          level: l.current.level,
+          levelName: l.current.name,
+          emoji: l.current.emoji,
+          progressPercent: l.progressPercent,
+          nextLevelXp: l.next?.xpRequired ?? null,
+        });
+      }
+    }).catch(() => {});
   }, []);
 
   if (!user) return null;
