@@ -168,6 +168,10 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={styles.actionText}>Edit Profile</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={[styles.actionButton, styles.inviteButton]} onPress={() => navigation.navigate('Invite')}>
+        <Text style={[styles.actionText, { color: '#4ade80' }]}>Invite Friends</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.actionText}>Settings</Text>
       </TouchableOpacity>
@@ -220,4 +224,5 @@ const styles = StyleSheet.create({
     marginTop: 12, alignItems: 'center',
   },
   actionText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  inviteButton: { borderWidth: 1, borderColor: '#4ade80', backgroundColor: '#0a2a0a' },
 });

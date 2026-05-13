@@ -33,6 +33,8 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import BlockedUsersScreen from '../screens/profile/BlockedUsersScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
+import UserProfileScreen from '../screens/profile/UserProfileScreen';
+import InviteScreen from '../screens/profile/InviteScreen';
 
 // Hub screens
 import HubScreen from '../screens/hub/HubScreen';
@@ -46,6 +48,7 @@ import ChallengesScreen from '../screens/hub/ChallengesScreen';
 import ChallengeDetailScreen from '../screens/hub/ChallengeDetailScreen';
 import CreateChallengeScreen from '../screens/hub/CreateChallengeScreen';
 import FocusScreen from '../screens/hub/FocusScreen';
+import DiscoverScreen from '../screens/hub/DiscoverScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -73,6 +76,7 @@ function EventsStack() {
       <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'New Event' }} />
       <Stack.Screen name="EventChat" component={EventChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.title || 'Chat' })} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
     </Stack.Navigator>
   );
 }
@@ -93,6 +97,7 @@ function ProfileStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
       <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: 'Blocked Users' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="Invite" component={InviteScreen} options={{ title: 'Invite Friends' }} />
     </Stack.Navigator>
   );
 }
@@ -111,6 +116,8 @@ function HubStack() {
       <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} options={{ title: 'Challenge' }} />
       <Stack.Screen name="CreateChallenge" component={CreateChallengeScreen} options={{ title: 'New Challenge' }} />
       <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
+      <Stack.Screen name="Discover" component={DiscoverScreen} options={{ title: 'Discover People' }} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
     </Stack.Navigator>
   );
 }

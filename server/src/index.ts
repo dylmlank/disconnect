@@ -25,6 +25,7 @@ import challengeRoutes from './routes/challenges';
 import focusRoutes from './routes/focus';
 import reactionRoutes from './routes/reactions';
 import reportRoutes from './routes/reports';
+import discoverRoutes from './routes/discover';
 
 const app = express();
 const server = createServer(app);
@@ -62,6 +63,7 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/focus', focusRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/discover', discoverRoutes);
 
 app.use(errorHandler);
 

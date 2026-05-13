@@ -204,4 +204,59 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response) => {
   });
 });
 
+// GET /api/users/:id — view another user's public profile (MUST be last — catches all /:id)
+router.get('/:id', authenticate, async (req: Request, res: Response) => {
+  const targetId = req.params.id as string;
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(targetId)) {
+    res.status(400).json({ error: 'validation', message: 'Invalid user ID' });
+    return;
+  }
+
+  const user = await findUserById(targetId);
+  if (!user) {
+    res.status(404).json({ error: 'not_found', message: 'User not found' });
+    return;
+  }
+
+  const profile = {
+    id: user.id,
+    firstName: user.first_name,
+    bio: user.bio,
+    interests: user.interests,
+    photoUrl: user.photo_url,
+    isMinor: user.is_minor,
+  };
+
+  const eventsAttended = await db('event_rsvps')
+    .join('events', 'event_rsvps.event_id', 'events.id')
+    .where('event_rsvps.user_id', targetId)
+    .where('events.starts_at', '<', new Date())
+    .count('* as count')
+    .first();
+
+  const challengesCompleted = await db('challenge_participants')
+    .where({ user_id: targetId, completed: true })
+    .count('* as count')
+    .first();
+
+  const weeksResult = await db.raw(`
+    SELECT COUNT(DISTINCT date_trunc('week', e.starts_at)) as weeks
+    FROM event_rsvps er
+    JOIN events e ON er.event_id = e.id
+    WHERE er.user_id = ?
+      AND e.starts_at < NOW()
+      AND e.starts_at > NOW() - INTERVAL '8 weeks'
+  `, [targetId]);
+
+  res.json({
+    user: profile,
+    stats: {
+      eventsAttended: Number(eventsAttended?.count || 0),
+      challengesCompleted: Number(challengesCompleted?.count || 0),
+      currentStreak: Number(weeksResult.rows[0]?.weeks || 0),
+    },
+  });
+});
+
 export default router;

@@ -126,6 +126,15 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         )}
       </TouchableOpacity>
 
+      {/* Discover */}
+      <TouchableOpacity style={styles.section} onPress={() => navigation.navigate('Discover')} activeOpacity={0.8}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="compass-outline" size={20} color="#f59e0b" />
+          <Text style={styles.sectionTitle}>Discover</Text>
+        </View>
+        <Text style={styles.sectionEmpty}>Find people nearby with shared interests</Text>
+      </TouchableOpacity>
+
       {/* Anti-screen-time nudge */}
       <View style={styles.nudge}>
         <Text style={styles.nudgeText}>Pick something and go. The world is waiting.</Text>
