@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '@clerk/clerk-expo';
 import { useAuthStore } from '../../store/authStore';
 import { useScreenTime } from '../../hooks/useScreenTime';
 import { INTERESTS } from '../../constants/interests';
@@ -17,12 +18,23 @@ interface UserStats {
 export default function ProfileScreen({ navigation }: { navigation: any }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const { signOut } = useAuth();
   const { weeklyMinutes } = useScreenTime();
   const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [focusMinutes, setFocusMinutes] = useState(0);
 
   useEffect(() => {
     api.get('/users/me/stats').then(({ data }) => setStats(data.stats)).catch(() => {});
+    api.get('/focus/history', { params: { limit: 100 } }).then(({ data }) => {
+      const thisWeek = data.sessions?.filter((s: any) => {
+        const d = new Date(s.startedAt);
+        const now = new Date();
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return d >= weekAgo && s.completed;
+      }) || [];
+      setFocusMinutes(thisWeek.reduce((sum: number, s: any) => sum + s.durationMinutes, 0));
+    }).catch(() => {});
   }, []);
 
   if (!user) return null;
@@ -80,7 +92,17 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
   };
 
   const handleLogout = () => {
-    setUser(null);
+    Alert.alert('Log Out', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          setUser(null);
+        },
+      },
+    ]);
   };
 
   return (
@@ -110,13 +132,22 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         ))}
       </View>
 
-      {/* Screen time badge */}
-      <View style={styles.screenTimeCard}>
-        <Text style={styles.screenTimeLabel}>Weekly screen time</Text>
-        <Text style={styles.screenTimeValue}>{weeklyMinutes} min</Text>
-        <Text style={styles.screenTimeSubtext}>
-          {weeklyMinutes < 30 ? "Amazing! You're barely here." : weeklyMinutes < 120 ? 'Great balance.' : 'Maybe go outside? :)'}
-        </Text>
+      {/* Screen time + Focus time */}
+      <View style={styles.timeCards}>
+        <View style={styles.timeCard}>
+          <Text style={styles.screenTimeLabel}>Screen time</Text>
+          <Text style={styles.screenTimeValue}>{weeklyMinutes}<Text style={styles.timeUnit}> min</Text></Text>
+          <Text style={styles.screenTimeSubtext}>
+            {weeklyMinutes < 30 ? "Barely here 🎉" : weeklyMinutes < 120 ? 'Good balance' : 'Go outside :)'}
+          </Text>
+        </View>
+        <View style={styles.timeCard}>
+          <Text style={styles.screenTimeLabel}>Focus time</Text>
+          <Text style={[styles.screenTimeValue, { color: '#60a5fa' }]}>{focusMinutes}<Text style={styles.timeUnit}> min</Text></Text>
+          <Text style={styles.screenTimeSubtext}>
+            {focusMinutes === 0 ? 'Start a session' : focusMinutes >= 300 ? 'Deep worker 🎯' : 'Keep going'}
+          </Text>
+        </View>
       </View>
 
       {/* Stats card */}
@@ -185,13 +216,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
   },
   chipText: { fontSize: 13, color: '#ccc' },
-  screenTimeCard: {
-    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 24, alignItems: 'center',
-    width: '100%', marginTop: 24, borderWidth: 1, borderColor: '#262626',
-  },
   screenTimeLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
-  screenTimeValue: { fontSize: 36, fontWeight: '800', color: '#4ade80', marginVertical: 4 },
+  screenTimeValue: { fontSize: 28, fontWeight: '800', color: '#4ade80', marginVertical: 4 },
   screenTimeSubtext: { fontSize: 13, color: '#666' },
+  timeCards: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 24 },
+  timeCard: {
+    flex: 1, backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16,
+    alignItems: 'center', borderWidth: 1, borderColor: '#262626',
+  },
+  timeUnit: { fontSize: 14, fontWeight: '600' },
   statsCard: {
     backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: '100%',
     marginTop: 12, borderWidth: 1, borderColor: '#262626',
