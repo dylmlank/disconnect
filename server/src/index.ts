@@ -11,6 +11,7 @@ import { setupWebSocket } from './ws/chatHandler';
 import { startBeaconExpiryJob } from './jobs/expireBeacons';
 import { startChatArchiveJob } from './jobs/archiveChats';
 import { startEventReminderJob } from './jobs/sendEventReminders';
+import { startReminderJobs } from './jobs/sendReminders';
 
 import authRoutes from './routes/auth';
 import eventRoutes from './routes/events';
@@ -26,6 +27,7 @@ import focusRoutes from './routes/focus';
 import reactionRoutes from './routes/reactions';
 import reportRoutes from './routes/reports';
 import discoverRoutes from './routes/discover';
+import notificationRoutes from './routes/notifications';
 
 const app = express();
 const server = createServer(app);
@@ -64,6 +66,7 @@ app.use('/api/focus', focusRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/discover', discoverRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(errorHandler);
 
@@ -77,6 +80,7 @@ async function start() {
   startBeaconExpiryJob();
   startChatArchiveJob();
   startEventReminderJob();
+  startReminderJobs();
 
   server.listen(env.PORT, () => {
     console.log(`Disconnect API running on port ${env.PORT}`);
