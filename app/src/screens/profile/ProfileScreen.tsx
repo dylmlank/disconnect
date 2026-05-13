@@ -172,6 +172,10 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={[styles.actionText, { color: '#4ade80' }]}>Invite Friends</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Badges')}>
+        <Text style={styles.actionText}>Badges</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.actionText}>Settings</Text>
       </TouchableOpacity>

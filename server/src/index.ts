@@ -28,6 +28,7 @@ import reactionRoutes from './routes/reactions';
 import reportRoutes from './routes/reports';
 import discoverRoutes from './routes/discover';
 import notificationRoutes from './routes/notifications';
+import badgeRoutes from './routes/badges';
 
 const app = express();
 const server = createServer(app);
@@ -67,6 +68,7 @@ app.use('/api/reactions', reactionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/discover', discoverRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/badges', badgeRoutes);
 
 app.use(errorHandler);
 

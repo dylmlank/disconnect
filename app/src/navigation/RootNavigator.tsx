@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/authStore';
 import { setTokenProvider } from '../services/api';
 import { useScreenTime } from '../hooks/useScreenTime';
 import { useNotifications } from '../hooks/useNotifications';
+import { useLocationSync } from '../hooks/useLocationSync';
 import ScreenTimeNudge from '../components/ScreenTimeNudge';
 
 // Auth screens
@@ -35,6 +36,7 @@ import BlockedUsersScreen from '../screens/profile/BlockedUsersScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import UserProfileScreen from '../screens/profile/UserProfileScreen';
 import InviteScreen from '../screens/profile/InviteScreen';
+import BadgesScreen from '../screens/profile/BadgesScreen';
 
 // Hub screens
 import HubScreen from '../screens/hub/HubScreen';
@@ -49,6 +51,7 @@ import ChallengeDetailScreen from '../screens/hub/ChallengeDetailScreen';
 import CreateChallengeScreen from '../screens/hub/CreateChallengeScreen';
 import FocusScreen from '../screens/hub/FocusScreen';
 import DiscoverScreen from '../screens/hub/DiscoverScreen';
+import CircleChatScreen from '../screens/hub/CircleChatScreen';
 
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
@@ -98,6 +101,7 @@ function ProfileStack() {
       <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: 'Blocked Users' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="Invite" component={InviteScreen} options={{ title: 'Invite Friends' }} />
+      <Stack.Screen name="Badges" component={BadgesScreen} options={{ title: 'Badges' }} />
     </Stack.Navigator>
   );
 }
@@ -118,6 +122,7 @@ function HubStack() {
       <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
       <Stack.Screen name="Discover" component={DiscoverScreen} options={{ title: 'Discover People' }} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: 'Profile' }} />
+      <Stack.Screen name="CircleChat" component={CircleChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.circleName ? `${route.params.circleName} Chat` : 'Chat' })} />
     </Stack.Navigator>
   );
 }
@@ -168,6 +173,9 @@ export default function RootNavigator() {
   const { showNudge, dismissNudge } = useScreenTime();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+
+  // Sync location to server for Discover feature
+  useLocationSync();
 
   // Check onboarding status
   useEffect(() => {

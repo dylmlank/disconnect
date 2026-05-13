@@ -12,6 +12,7 @@ import {
   getCircleDetail,
   getCircleFeed,
 } from '../models/circle';
+import { getCircleMessages, sendCircleMessage } from '../models/circleMessage';
 
 const router = Router();
 
@@ -104,6 +105,44 @@ router.get('/:id/feed', authenticate, async (req: Request, res: Response) => {
     return;
   }
   res.json({ activity: feed });
+});
+
+const messageSchema = z.object({
+  message: z.string().min(1).max(500),
+});
+
+// GET /api/circles/:id/messages
+router.get('/:id/messages', authenticate, async (req: Request, res: Response) => {
+  // Membership check is implicit — getCircleMessages will return empty for non-members via the join check
+  const detail = await getCircleDetail(req.params.id as string, req.user.userId);
+  if (!detail) {
+    res.status(404).json({ error: 'not_found', message: 'Circle not found or you are not a member' });
+    return;
+  }
+
+  const messages = await getCircleMessages(req.params.id as string, {
+    before: req.query.before as string | undefined,
+    limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
+  });
+  res.json({ messages });
+});
+
+// POST /api/circles/:id/messages
+router.post('/:id/messages', authenticate, rateLimit(60, 30, 'circle_msg'), async (req: Request, res: Response) => {
+  const parsed = messageSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'validation', message: parsed.error.issues[0].message });
+    return;
+  }
+
+  const detail = await getCircleDetail(req.params.id as string, req.user.userId);
+  if (!detail) {
+    res.status(404).json({ error: 'not_found', message: 'Circle not found or you are not a member' });
+    return;
+  }
+
+  const msg = await sendCircleMessage(req.params.id as string, req.user.userId, parsed.data.message);
+  res.status(201).json({ message: msg });
 });
 
 export default router;

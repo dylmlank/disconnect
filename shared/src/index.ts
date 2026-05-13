@@ -4,3 +4,4 @@ export * from './interests';
 export * from './api';
 export * from './habits';
 export * from './challengeTemplates';
+export * from './badges';

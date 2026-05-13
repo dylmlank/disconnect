@@ -88,6 +88,22 @@ router.put('/me/device-token', authenticate, async (req: Request, res: Response)
   res.json({ success: true });
 });
 
+// PUT /api/users/me/location — update approximate location
+router.put('/me/location', authenticate, async (req: Request, res: Response) => {
+  const { latitude, longitude } = req.body;
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+    res.status(400).json({ error: 'validation', message: 'latitude and longitude required' });
+    return;
+  }
+
+  await db.raw(
+    `UPDATE users SET approximate_location = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?`,
+    [longitude, latitude, req.user.userId],
+  );
+
+  res.json({ success: true });
+});
+
 // DELETE /api/users/me — delete account and all associated data
 router.delete('/me', authenticate, async (req: Request, res: Response) => {
   const userId = req.user.userId;

@@ -89,6 +89,15 @@ export default function CircleDetailScreen({ route, navigation }: { route: any; 
         />
       )}
 
+      {/* Chat button */}
+      <TouchableOpacity
+        style={styles.chatButton}
+        onPress={() => navigation.navigate('CircleChat', { circleId, circleName: currentCircle.name })}
+      >
+        <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+        <Text style={styles.chatButtonText}>Circle Chat</Text>
+      </TouchableOpacity>
+
       {/* Leave button */}
       <TouchableOpacity style={styles.leaveButton} onPress={handleLeave}>
         <Text style={styles.leaveText}>
@@ -112,6 +121,11 @@ const styles = StyleSheet.create({
   memberChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingRight: 12, paddingLeft: 4, paddingVertical: 4, gap: 6 },
   memberName: { fontSize: 13, color: '#ccc' },
   feed: { flex: 1, borderTopWidth: 1, borderTopColor: '#262626' },
+  chatButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    padding: 14, backgroundColor: '#262626', borderTopWidth: 1, borderTopColor: '#333',
+  },
+  chatButtonText: { fontSize: 15, fontWeight: '600', color: '#fff' },
   emptyFeed: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   emptyFeedText: { fontSize: 16, fontWeight: '600', color: '#555', marginTop: 12 },
   emptyFeedSubtext: { fontSize: 13, color: '#444', marginTop: 4, textAlign: 'center' },
