@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { UserHabit, HabitLog, HabitStreak } from '@disconnect/shared';
+import { hapticSuccess } from '../utils/haptics';
 
 interface HabitRowProps {
   habit: UserHabit;
@@ -36,7 +37,14 @@ export default function HabitRow({ habit, todayLog, streak, onLog, onUnlog }: Ha
         )}
         <TouchableOpacity
           style={[styles.logBtn, isLogged && styles.logBtnDone]}
-          onPress={isLogged ? onUnlog : onLog}
+          onPress={() => {
+            if (isLogged) {
+              onUnlog();
+            } else {
+              hapticSuccess();
+              onLog();
+            }
+          }}
           activeOpacity={0.7}
         >
           <Text style={[styles.logBtnText, isLogged && styles.logBtnTextDone]}>

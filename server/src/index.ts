@@ -12,6 +12,7 @@ import { startBeaconExpiryJob } from './jobs/expireBeacons';
 import { startChatArchiveJob } from './jobs/archiveChats';
 import { startEventReminderJob } from './jobs/sendEventReminders';
 import { startReminderJobs } from './jobs/sendReminders';
+import { startDailySummaryJob } from './jobs/sendDailySummary';
 
 import authRoutes from './routes/auth';
 import eventRoutes from './routes/events';
@@ -91,6 +92,7 @@ async function start() {
   startChatArchiveJob();
   startEventReminderJob();
   startReminderJobs();
+  startDailySummaryJob();
 
   server.listen(env.PORT, () => {
     console.log(`Disconnect API running on port ${env.PORT}`);
