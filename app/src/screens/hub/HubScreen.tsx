@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useHabitStore } from '../../store/habitStore';
@@ -46,6 +47,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const { activeSessions, fetchActive } = useFocusStore();
   const user = useAuthStore((s) => s.user);
   const showToast = useToastStore((s) => s.show);
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [todayVibe, setTodayVibe] = useState<string | null>(null);
   const [roomCount, setRoomCount] = useState(0);
@@ -120,7 +122,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
       {/* ── Hero Section ─────────────────────────────────────── */}
       <View style={styles.hero}>
         <View style={styles.heroTop}>
@@ -301,8 +303,8 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         </View>
       )}
 
-      {/* Circles */}
-      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Circles')} activeOpacity={0.8}>
+      {/* Circles — navigates to Social tab */}
+      <TouchableOpacity style={styles.card} onPress={() => navigation.getParent()?.navigate('SocialTab')} activeOpacity={0.8}>
         <View style={styles.cardRow}>
           <View style={[styles.iconBubble, { backgroundColor: '#0a2a0a' }]}>
             <Ionicons name="people-outline" size={22} color="#4ade80" />
@@ -318,8 +320,8 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         </View>
       </TouchableOpacity>
 
-      {/* Discover */}
-      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Discover')} activeOpacity={0.8}>
+      {/* Discover — navigates to Social tab */}
+      <TouchableOpacity style={styles.card} onPress={() => navigation.getParent()?.navigate('SocialTab', { screen: 'Discover' })} activeOpacity={0.8}>
         <View style={styles.cardRow}>
           <View style={[styles.iconBubble, { backgroundColor: '#1a1a0a' }]}>
             <Ionicons name="compass-outline" size={22} color="#f59e0b" />
