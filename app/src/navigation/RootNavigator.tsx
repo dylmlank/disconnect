@@ -12,6 +12,7 @@ import { useScreenTime } from '../hooks/useScreenTime';
 import { useNotifications } from '../hooks/useNotifications';
 import { useLocationSync } from '../hooks/useLocationSync';
 import ScreenTimeNudge from '../components/ScreenTimeNudge';
+import AchievementToast from '../components/AchievementToast';
 
 // Auth screens
 import PhoneEntryScreen from '../screens/auth/PhoneEntryScreen';
@@ -139,31 +140,59 @@ function HubStack() {
   );
 }
 
+function TabIcon({ name, focused, color, isCenter }: { name: keyof typeof Ionicons.glyphMap; focused: boolean; color: string; isCenter?: boolean }) {
+  const iconSize = isCenter ? 26 : 22;
+  return (
+    <View style={focused ? tabStyles.activeWrap : tabStyles.inactiveWrap}>
+      {focused && <View style={[tabStyles.activePill, isCenter && tabStyles.centerPill]} />}
+      <Ionicons name={name} size={iconSize} color={color} />
+    </View>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  activeWrap: { alignItems: 'center', justifyContent: 'center', position: 'relative', paddingTop: 2 },
+  inactiveWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 2 },
+  activePill: {
+    position: 'absolute', top: -4, width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+  },
+  centerPill: { width: 42, height: 42, borderRadius: 21, top: -6 },
+});
+
 function MainTabs() {
   return (
     <Tab.Navigator
+      initialRouteName="HubTab"
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#0a0a0a', borderTopColor: '#262626' },
+        tabBarStyle: {
+          backgroundColor: '#0a0a0a',
+          borderTopColor: '#1a1a1a',
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 6,
+        },
         tabBarActiveTintColor: '#4ade80',
-        tabBarInactiveTintColor: '#666',
+        tabBarInactiveTintColor: '#555',
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tab.Screen name="EventsTab" component={EventsStack} options={{
         title: 'Events',
-        tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon name="calendar-outline" focused={focused} color={color} />,
       }} />
       <Tab.Screen name="BeaconsTab" component={BeaconsStack} options={{
         title: 'Map',
-        tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon name="map-outline" focused={focused} color={color} />,
       }} />
       <Tab.Screen name="HubTab" component={HubStack} options={{
         title: 'Hub',
-        tabBarIcon: ({ color, size }) => <Ionicons name="flash-outline" size={size} color={color} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon name="flash-outline" focused={focused} color={color} isCenter />,
       }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{
         title: 'Profile',
-        tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+        tabBarIcon: ({ focused, color }) => <TabIcon name="person-outline" focused={focused} color={color} />,
       }} />
     </Tab.Navigator>
   );
@@ -263,6 +292,7 @@ export default function RootNavigator() {
       <NavigationContainer ref={navigationRef} theme={DarkTheme}>
         {content}
       </NavigationContainer>
+      <AchievementToast />
       <ScreenTimeNudge visible={showNudge} onDismiss={dismissNudge} />
     </View>
   );

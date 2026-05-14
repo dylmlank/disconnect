@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
-import { getRecentActivity } from '../models/activity';
+import { getRecentActivity, getCircleActivity } from '../models/activity';
 
 const router = Router();
 
@@ -33,6 +33,12 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
   });
 
   res.json({ activity });
+});
+
+// GET /api/activity/circle — recent actions by circle members
+router.get('/circle', authenticate, async (req: Request, res: Response) => {
+  const activities = await getCircleActivity(req.user.userId);
+  res.json({ activities });
 });
 
 export default router;
