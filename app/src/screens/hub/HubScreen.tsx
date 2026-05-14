@@ -177,6 +177,46 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         <QuickActions actions={quickActions} />
       </View>
 
+      {/* ── Today's Progress ─────────────────────────────────── */}
+      {habits.length > 0 && (
+        <View style={styles.progressRow}>
+          <View style={styles.progressItem}>
+            <ProgressRing size={36} strokeWidth={3} progress={habitProgress} color="#4ade80">
+              <Ionicons name="leaf" size={14} color="#4ade80" />
+            </ProgressRing>
+            <Text style={styles.progressLabel}>
+              {completedHabits}/{habits.length}
+            </Text>
+          </View>
+          <View style={styles.progressItem}>
+            <View style={[styles.progressDot, todayCheckIn ? styles.progressDotDone : styles.progressDotPending]}>
+              <Ionicons name={todayCheckIn ? 'checkmark' : 'heart-outline'} size={14} color={todayCheckIn ? '#4ade80' : '#555'} />
+            </View>
+            <Text style={styles.progressLabel}>
+              {todayCheckIn ? 'Checked in' : 'Check in'}
+            </Text>
+          </View>
+          <View style={styles.progressItem}>
+            <View style={[styles.progressDot, todayVibe ? styles.progressDotDone : styles.progressDotPending]}>
+              <Text style={{ fontSize: 14 }}>{todayVibe ? (VIBE_MAP[todayVibe]?.emoji ?? '✨') : '✨'}</Text>
+            </View>
+            <Text style={styles.progressLabel}>
+              {todayVibe ? 'Vibed' : 'Set vibe'}
+            </Text>
+          </View>
+          {activeSessions.length > 0 && (
+            <View style={styles.progressItem}>
+              <View style={[styles.progressDot, styles.progressDotLive]}>
+                <Ionicons name="timer" size={14} color="#60a5fa" />
+              </View>
+              <Text style={[styles.progressLabel, { color: '#60a5fa' }]}>
+                {activeSessions.length} focus
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* ── Vibe Check ───────────────────────────────────────── */}
       {todayVibe ? (
         <TouchableOpacity style={styles.vibeCompact} onPress={() => navigation.navigate('VibeCheck')}>
@@ -452,7 +492,22 @@ const styles = StyleSheet.create({
   xpFill: { height: '100%', backgroundColor: '#4ade80', borderRadius: 2 },
 
   // Quick Actions
-  quickActionsWrap: { marginBottom: 20 },
+  quickActionsWrap: { marginBottom: 16 },
+
+  // Progress Row
+  progressRow: {
+    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    backgroundColor: '#111', borderRadius: 14, padding: 14, marginBottom: 16,
+    borderWidth: 1, borderColor: '#1a1a1a',
+  },
+  progressItem: { alignItems: 'center', gap: 4 },
+  progressLabel: { fontSize: 10, color: '#666', fontWeight: '600' },
+  progressDot: {
+    width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center',
+  },
+  progressDotDone: { backgroundColor: '#0a2a0a' },
+  progressDotPending: { backgroundColor: '#1a1a1a' },
+  progressDotLive: { backgroundColor: '#0a1a3a' },
 
   // Vibe
   vibeCompact: {

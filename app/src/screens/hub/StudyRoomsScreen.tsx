@@ -283,8 +283,8 @@ const styles = StyleSheet.create({
   vibeScrollContent: { gap: 8, paddingRight: 4 },
   vibePill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7,
-    borderWidth: 1, borderColor: '#262626',
+    backgroundColor: '#111', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7,
+    borderWidth: 1, borderColor: '#1a1a1a',
   },
   vibePillEmoji: { fontSize: 14 },
   vibePillLabel: { fontSize: 13, color: '#aaa', fontWeight: '600' },
@@ -295,8 +295,8 @@ const styles = StyleSheet.create({
 
   roomList: { gap: 10 },
   roomCard: {
-    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#262626',
+    backgroundColor: '#111', borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: '#1a1a1a',
   },
   roomTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   roomEmoji: { fontSize: 28, width: 36, textAlign: 'center' },

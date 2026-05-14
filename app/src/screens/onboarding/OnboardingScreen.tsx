@@ -11,26 +11,44 @@ interface Slide {
   title: string;
   subtitle: string;
   emoji: string;
+  accent: string;
 }
 
 const slides: Slide[] = [
   {
     id: '1',
     title: 'Welcome to Disconnect',
-    subtitle: 'The app designed to get you off your phone and into the world.',
-    emoji: '\u{1F44B}',
+    subtitle: 'The app designed to get you off your phone\nand into the world.',
+    emoji: '👋',
+    accent: '#4ade80',
   },
   {
     id: '2',
-    title: 'Find Your People',
-    subtitle: 'Discover local events nearby or drop a beacon to meet people spontaneously.',
-    emoji: '\u{1F4CD}',
+    title: 'Track What Matters',
+    subtitle: 'Build habits, check in daily, and see your progress.\nScience-backed — not engagement-hacked.',
+    emoji: '🌱',
+    accent: '#4ade80',
   },
   {
     id: '3',
+    title: 'Find Your People',
+    subtitle: 'Discover events nearby, drop beacons to meet spontaneously, and join circles for accountability.',
+    emoji: '📍',
+    accent: '#60a5fa',
+  },
+  {
+    id: '4',
+    title: 'Focus Together',
+    subtitle: 'Start focus sessions, join study rooms, and walk with others — no video, just presence.',
+    emoji: '🎯',
+    accent: '#f59e0b',
+  },
+  {
+    id: '5',
     title: 'Less Screen, More Life',
-    subtitle: "We track your time here as a low score. The best session is under 2 minutes.\n\nLet's go.",
-    emoji: '\u{1F31F}',
+    subtitle: "We track your time here as a LOW score.\nThe best session is under 2 minutes.\n\nLet's go.",
+    emoji: '🌟',
+    accent: '#4ade80',
   },
 ];
 
@@ -61,6 +79,8 @@ export default function OnboardingScreen({ onComplete }: Props) {
     onComplete();
   };
 
+  const currentSlide = slides[currentIndex];
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.skipButton} onPress={handleComplete}>
@@ -79,7 +99,9 @@ export default function OnboardingScreen({ onComplete }: Props) {
         viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
         renderItem={({ item }) => (
           <View style={styles.slide}>
-            <Text style={styles.emoji}>{item.emoji}</Text>
+            <View style={[styles.emojiCircle, { backgroundColor: `${item.accent}15` }]}>
+              <Text style={styles.emoji}>{item.emoji}</Text>
+            </View>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.subtitle}</Text>
           </View>
@@ -89,34 +111,42 @@ export default function OnboardingScreen({ onComplete }: Props) {
       {/* Dots */}
       <View style={styles.dots}>
         {slides.map((_, i) => (
-          <View key={i} style={[styles.dot, i === currentIndex && styles.dotActive]} />
+          <View key={i} style={[styles.dot, i === currentIndex && [styles.dotActive, { backgroundColor: currentSlide.accent }]]} />
         ))}
       </View>
 
       {/* Next / Get Started button */}
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: currentSlide.accent }]} onPress={handleNext}>
         <Text style={styles.buttonText}>
-          {currentIndex === slides.length - 1 ? "Get Started" : "Next"}
+          {currentIndex === slides.length - 1 ? "Let's Go" : "Next"}
         </Text>
       </TouchableOpacity>
+
+      {/* Page counter */}
+      <Text style={styles.pageCounter}>{currentIndex + 1} / {slides.length}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', paddingBottom: 60 },
+  container: { flex: 1, backgroundColor: '#0a0a0a', paddingBottom: 50 },
   skipButton: { position: 'absolute', top: 60, right: 24, zIndex: 10 },
-  skipText: { fontSize: 15, color: '#888', fontWeight: '600' },
-  slide: { width, justifyContent: 'center', alignItems: 'center', padding: 40, paddingTop: 120 },
-  emoji: { fontSize: 64, marginBottom: 32 },
+  skipText: { fontSize: 15, color: '#555', fontWeight: '600' },
+  slide: { width, justifyContent: 'center', alignItems: 'center', padding: 40, paddingTop: 100 },
+  emojiCircle: {
+    width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center',
+    marginBottom: 32,
+  },
+  emoji: { fontSize: 48 },
   title: { fontSize: 28, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 16 },
-  subtitle: { fontSize: 17, color: '#aaa', textAlign: 'center', lineHeight: 26 },
-  dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 32 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#333', marginHorizontal: 4 },
-  dotActive: { backgroundColor: '#4ade80', width: 24 },
+  subtitle: { fontSize: 16, color: '#999', textAlign: 'center', lineHeight: 24 },
+  dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 28 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#222', marginHorizontal: 4 },
+  dotActive: { width: 24 },
   button: {
-    backgroundColor: '#4ade80', borderRadius: 12, paddingVertical: 16,
+    borderRadius: 14, paddingVertical: 16,
     marginHorizontal: 24, alignItems: 'center',
   },
   buttonText: { fontSize: 16, fontWeight: '700', color: '#0a0a0a' },
+  pageCounter: { fontSize: 12, color: '#333', textAlign: 'center', marginTop: 12 },
 });

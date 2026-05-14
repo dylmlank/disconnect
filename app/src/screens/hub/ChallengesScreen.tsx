@@ -113,11 +113,11 @@ const styles = StyleSheet.create({
   toggle: {
     flexDirection: 'row',
     margin: 16,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#111',
     borderRadius: 10,
     padding: 4,
     borderWidth: 1,
-    borderColor: '#262626',
+    borderColor: '#1a1a1a',
   },
   toggleBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
   toggleBtnActive: { backgroundColor: '#f59e0b' },
