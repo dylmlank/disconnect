@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,9 +54,10 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const [levelInfo, setLevelInfo] = useState<LevelInfo | null>(null);
   const [streak, setStreak] = useState(0);
   const [circleActivity, setCircleActivity] = useState<CircleActivity[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
+  const loadData = useCallback(() => {
+    return Promise.all([
       fetchHabits(),
       fetchToday(),
       fetchCircles(),
@@ -85,8 +86,18 @@ export default function HubScreen({ navigation }: { navigation: any }) {
       api.get('/activity/circle').then(({ data }) => {
         setCircleActivity((data.activities ?? []).slice(0, 5));
       }).catch(() => setCircleActivity([])),
-    ]).finally(() => setLoading(false));
+    ]);
+  }, [fetchHabits, fetchToday, fetchCircles, fetchActive]);
+
+  useEffect(() => {
+    loadData().finally(() => setLoading(false));
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   const completedHabits = todayLogs.length;
   const totalHabits = habits.length || 1;
@@ -122,7 +133,11 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4ade80" />}
+    >
       {/* ── Hero Section ─────────────────────────────────────── */}
       <View style={styles.hero}>
         <View style={styles.heroTop}>
