@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useScreenTime } from '../../hooks/useScreenTime';
 import { INTERESTS } from '../../constants/interests';
+import ProgressRing from '../../components/ProgressRing';
 import api from '../../services/api';
 import { API_URL } from '../../constants/config';
 
@@ -129,15 +131,20 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
       <Text style={styles.name}>{user.firstName}</Text>
       {user.isMinor && <Text style={styles.ageBadge}>Under 18</Text>}
 
-      {/* Level + XP bar */}
+      {/* Level + XP ring */}
       {levelInfo && (
         <View style={styles.levelBlock}>
+          <ProgressRing
+            size={72}
+            strokeWidth={4}
+            progress={levelInfo.progressPercent / 100}
+            color="#4ade80"
+          >
+            <Text style={styles.levelNumInRing}>{levelInfo.level}</Text>
+          </ProgressRing>
           <Text style={styles.levelText}>
-            {levelInfo.emoji} Level {levelInfo.level} — {levelInfo.levelName}
+            {levelInfo.emoji} {levelInfo.levelName}
           </Text>
-          <View style={styles.xpBarTrack}>
-            <View style={[styles.xpBarFill, { width: `${levelInfo.progressPercent}%` as any }]} />
-          </View>
           {levelInfo.nextLevelXp !== null && (
             <Text style={styles.xpSubtext}>{levelInfo.xp} / {levelInfo.nextLevelXp} XP</Text>
           )}
@@ -202,28 +209,33 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         </View>
       )}
 
-      {/* Actions */}
-      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('EditProfile')}>
-        <Text style={styles.actionText}>Edit Profile</Text>
-      </TouchableOpacity>
+      {/* Actions Grid */}
+      <View style={styles.actionsGrid}>
+        <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('EditProfile')}>
+          <Ionicons name="pencil-outline" size={20} color="#4ade80" />
+          <Text style={styles.gridLabel}>Edit Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Badges')}>
+          <Ionicons name="ribbon-outline" size={20} color="#f59e0b" />
+          <Text style={styles.gridLabel}>Badges</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('MoodTrends')}>
+          <Ionicons name="analytics-outline" size={20} color="#a78bfa" />
+          <Text style={styles.gridLabel}>Mood Trends</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('WeeklyRecap')}>
+          <Ionicons name="calendar-outline" size={20} color="#60a5fa" />
+          <Text style={styles.gridLabel}>Weekly Recap</Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={[styles.actionButton, styles.inviteButton]} onPress={() => navigation.navigate('Invite')}>
+        <Ionicons name="people-outline" size={18} color="#4ade80" />
         <Text style={[styles.actionText, { color: '#4ade80' }]}>Invite Friends</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Badges')}>
-        <Text style={styles.actionText}>Badges</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MoodTrends')}>
-        <Text style={styles.actionText}>Mood Trends</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('WeeklyRecap')}>
-        <Text style={styles.actionText}>Weekly Recap</Text>
-      </TouchableOpacity>
-
       <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Settings')}>
+        <Ionicons name="settings-outline" size={18} color="#888" />
         <Text style={styles.actionText}>Settings</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -234,53 +246,61 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
   content: { padding: 24, alignItems: 'center', paddingBottom: 48 },
   avatar: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#262626',
-    justifyContent: 'center', alignItems: 'center', marginTop: 24, overflow: 'hidden',
+    width: 88, height: 88, borderRadius: 44, backgroundColor: '#1a1a1a',
+    justifyContent: 'center', alignItems: 'center', marginTop: 16, overflow: 'hidden',
+    borderWidth: 2, borderColor: '#262626',
   },
-  avatarText: { fontSize: 32, fontWeight: '800', color: '#4ade80' },
-  photoHint: { fontSize: 12, color: '#666', textAlign: 'center', marginTop: 6 },
+  avatarText: { fontSize: 34, fontWeight: '800', color: '#4ade80' },
+  photoHint: { fontSize: 11, color: '#555', textAlign: 'center', marginTop: 6 },
   name: { fontSize: 24, fontWeight: '800', color: '#fff', marginTop: 12 },
   ageBadge: {
     fontSize: 12, color: '#f59e0b', fontWeight: '600', marginTop: 4,
     backgroundColor: '#2a2000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6,
   },
-  levelBlock: { alignItems: 'center', width: '100%', marginTop: 8, marginBottom: 4 },
-  levelText: { fontSize: 15, fontWeight: '700', color: '#aaa', marginBottom: 8 },
-  xpBarTrack: {
-    width: '70%', height: 4, backgroundColor: '#262626', borderRadius: 2, overflow: 'hidden',
-  },
-  xpBarFill: { height: '100%', backgroundColor: '#4ade80', borderRadius: 2 },
-  xpSubtext: { fontSize: 11, color: '#555', marginTop: 4 },
+  levelBlock: { alignItems: 'center', width: '100%', marginTop: 16, marginBottom: 4, gap: 6 },
+  levelNumInRing: { fontSize: 20, fontWeight: '800', color: '#4ade80' },
+  levelText: { fontSize: 14, fontWeight: '700', color: '#aaa' },
+  xpSubtext: { fontSize: 11, color: '#555' },
   bio: { fontSize: 15, color: '#aaa', textAlign: 'center', marginTop: 8 },
   interests: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16, justifyContent: 'center' },
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#333',
+    backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#262626',
   },
   chipText: { fontSize: 13, color: '#ccc' },
-  screenTimeLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
-  screenTimeValue: { fontSize: 28, fontWeight: '800', color: '#4ade80', marginVertical: 4 },
-  screenTimeSubtext: { fontSize: 13, color: '#666' },
+  screenTimeLabel: { fontSize: 12, color: '#888', fontWeight: '600' },
+  screenTimeValue: { fontSize: 26, fontWeight: '800', color: '#4ade80', marginVertical: 4 },
+  screenTimeSubtext: { fontSize: 12, color: '#555' },
   timeCards: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 24 },
   timeCard: {
-    flex: 1, backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16,
-    alignItems: 'center', borderWidth: 1, borderColor: '#262626',
+    flex: 1, backgroundColor: '#111', borderRadius: 16, padding: 16,
+    alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a',
   },
   timeUnit: { fontSize: 14, fontWeight: '600' },
   statsCard: {
-    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: '100%',
-    marginTop: 12, borderWidth: 1, borderColor: '#262626',
+    backgroundColor: '#111', borderRadius: 16, padding: 20, width: '100%',
+    marginTop: 12, borderWidth: 1, borderColor: '#1a1a1a',
   },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center' },
-  statValue: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  statValue: { fontSize: 22, fontWeight: '800', color: '#fff' },
   streakValue: { color: '#f59e0b' },
-  statLabel: { fontSize: 11, color: '#888', marginTop: 4, textTransform: 'uppercase' },
+  statLabel: { fontSize: 10, color: '#666', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   streakMessage: { fontSize: 13, color: '#f59e0b', textAlign: 'center', marginTop: 12 },
-  actionButton: {
-    width: '100%', padding: 16, borderRadius: 12, backgroundColor: '#1a1a1a',
-    marginTop: 12, alignItems: 'center',
+  actionsGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 10, width: '100%', marginTop: 24,
   },
-  actionText: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  inviteButton: { borderWidth: 1, borderColor: '#4ade80', backgroundColor: '#0a2a0a' },
+  gridItem: {
+    width: '47%', flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#111', borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: '#1a1a1a',
+  },
+  gridLabel: { fontSize: 13, fontWeight: '600', color: '#ccc' },
+  actionButton: {
+    width: '100%', padding: 16, borderRadius: 12, backgroundColor: '#111',
+    marginTop: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
+    borderWidth: 1, borderColor: '#1a1a1a',
+  },
+  actionText: { fontSize: 15, fontWeight: '600', color: '#ccc' },
+  inviteButton: { borderColor: '#1a3a1a', backgroundColor: '#0d1a0d' },
 });
