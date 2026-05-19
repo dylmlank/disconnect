@@ -4,11 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from './services/clerkTokenCache';
 import { CLERK_PUBLISHABLE_KEY } from './constants/config';
+import { useThemeStore } from './store/themeStore';
 import RootNavigator from './navigation/RootNavigator';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function ClerkGate() {
   const { isLoaded } = useAuth();
+  const mode = useThemeStore((s) => s.mode);
 
   if (!isLoaded) {
     return (
@@ -21,7 +23,7 @@ function ClerkGate() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <RootNavigator />
     </>
   );
