@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useHabitStore } from '../../store/habitStore';
@@ -13,6 +13,7 @@ import { CURATED_HABITS, getTodaysBite } from '@disconnect/shared';
 import { hapticTap, hapticSuccess } from '../../utils/haptics';
 import ProgressRing from '../../components/ProgressRing';
 import StreakBanner from '../../components/StreakBanner';
+import { HubSkeleton } from '../../components/Skeleton';
 import api from '../../services/api';
 
 const todaysBite = getTodaysBite();
@@ -131,8 +132,8 @@ export default function HubScreen({ navigation }: { navigation: any }) {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg, paddingTop: insets.top + 12 }]}>
+        <HubSkeleton />
       </View>
     );
   }
@@ -412,7 +413,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20, paddingBottom: 48 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingContainer: { flex: 1 },
 
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
