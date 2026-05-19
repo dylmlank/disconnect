@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCheckInStore } from '../../store/checkinStore';
+import { hapticTap, hapticSuccess } from '../../utils/haptics';
 import MoodSelector from '../../components/MoodSelector';
 
 const MOOD_LABELS: Record<number, string> = {
@@ -49,6 +50,7 @@ export default function CheckInScreen() {
 
   async function handleSubmit() {
     if (!canSubmit || !mood) return;
+    hapticTap();
     setSubmitting(true);
     try {
       await submitCheckIn({
@@ -58,6 +60,7 @@ export default function CheckInScreen() {
         goodThing3: good3.trim() || undefined,
         intention: intention.trim() || undefined,
       });
+      hapticSuccess();
       const randomMsg = ENCOURAGING_MESSAGES[Math.floor(Math.random() * ENCOURAGING_MESSAGES.length)];
       setMessage(randomMsg);
       setSubmitted(true);

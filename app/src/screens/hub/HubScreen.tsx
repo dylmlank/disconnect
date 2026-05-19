@@ -62,6 +62,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showGrow, setShowGrow] = useState(false);
   const [lastFocusAt, setLastFocusAt] = useState<string | null>(null);
+  const [showInlineVibe, setShowInlineVibe] = useState(false);
 
   const loadData = useCallback(() => {
     return Promise.all([
@@ -137,6 +138,19 @@ export default function HubScreen({ navigation }: { navigation: any }) {
     await logHabit(habitId);
     hapticSuccess();
     showToast({ icon: '✅', title: 'Habit logged!', subtitle: '+10 XP', color: '#4ade80' });
+  };
+
+  const handleInlineVibe = async (vibeId: string) => {
+    hapticTap();
+    setTodayVibe(vibeId);
+    setShowInlineVibe(false);
+    hapticSuccess();
+    showToast({ icon: VIBE_MAP[vibeId]?.emoji ?? '✨', title: 'Vibe set!', color: VIBE_MAP[vibeId]?.color });
+    try {
+      await api.post('/vibes', { vibe: vibeId });
+    } catch {
+      setTodayVibe(null); // revert on failure
+    }
   };
 
   // Calculate today's completion score
@@ -233,7 +247,14 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         <View style={styles.dailyActions}>
           <TouchableOpacity
             style={[styles.dailyAction, todayVibe && styles.dailyActionDone]}
-            onPress={() => { hapticTap(); navigation.navigate('VibeCheck'); }}
+            onPress={() => {
+              hapticTap();
+              if (todayVibe) {
+                navigation.navigate('VibeCheck');
+              } else {
+                setShowInlineVibe(!showInlineVibe);
+              }
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.dailyActionEmoji}>{todayVibe ? (VIBE_MAP[todayVibe]?.emoji ?? '✨') : '✨'}</Text>
@@ -266,6 +287,22 @@ export default function HubScreen({ navigation }: { navigation: any }) {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Inline vibe picker */}
+        {showInlineVibe && !todayVibe && (
+          <View style={[styles.inlineVibeRow, { borderTopColor: colors.cardBorder }]}>
+            {Object.entries(VIBE_MAP).map(([id, v]) => (
+              <TouchableOpacity
+                key={id}
+                style={styles.inlineVibeBtn}
+                onPress={() => handleInlineVibe(id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.inlineVibeEmoji}>{v.emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* Quick-log habit dots */}
         {habits.length > 0 && completedHabits < totalHabits && (
@@ -521,6 +558,14 @@ const styles = StyleSheet.create({
   dailyActionDone: { backgroundColor: 'rgba(74, 222, 128, 0.06)' },
   dailyActionEmoji: { fontSize: 22 },
   dailyActionLabel: { fontSize: 11, fontWeight: '600' },
+
+  // Inline vibe picker
+  inlineVibeRow: {
+    flexDirection: 'row', justifyContent: 'space-around', marginTop: 14, paddingTop: 14,
+    borderTopWidth: 1,
+  },
+  inlineVibeBtn: { padding: 8 },
+  inlineVibeEmoji: { fontSize: 26 },
 
   // Habit dots
   habitDots: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
