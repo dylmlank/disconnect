@@ -35,6 +35,7 @@ import recapRoutes from './routes/recap';
 import roomRoutes from './routes/rooms';
 import feedRoutes from './routes/feed';
 import nudgeRoutes from './routes/nudges';
+import suggestionRoutes from './routes/suggestions';
 
 const app = express();
 const server = createServer(app);
@@ -80,6 +81,7 @@ app.use('/api/recap', recapRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/nudges', nudgeRoutes);
+app.use('/api/suggestions', suggestionRoutes);
 
 app.use(errorHandler);
 

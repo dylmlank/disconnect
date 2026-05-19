@@ -15,6 +15,7 @@ import { hapticTap, hapticSuccess } from '../../utils/haptics';
 import ProgressRing from '../../components/ProgressRing';
 import StreakBanner from '../../components/StreakBanner';
 import { HubSkeleton } from '../../components/Skeleton';
+import MeetupSuggestions from '../../components/MeetupSuggestions';
 import api from '../../services/api';
 
 const todaysBite = getTodaysBite();
@@ -501,6 +502,12 @@ export default function HubScreen({ navigation }: { navigation: any }) {
           <Ionicons name="arrow-forward-circle" size={24} color={colors.accent} />
         </TouchableOpacity>
       )}
+
+      {/* ── Meetup Suggestions ─────────────────────────── */}
+      <MeetupSuggestions
+        onTapUser={(userId) => navigation.navigate('UserProfile', { userId })}
+        onCreateEvent={(s) => navigation.navigate('CreateEvent', { prefillTitle: `${s.emoji} ${s.reason.split('—')[0].trim()}` })}
+      />
 
       {/* ── Science Bite ─────────────────────────────────── */}
       <View style={[styles.scienceBite, { backgroundColor: colors.bgSecondary, borderColor: colors.cardBorder }]}>
