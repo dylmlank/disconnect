@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@clerk/clerk-expo';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore, useColors } from '../../store/themeStore';
+import { hapticTap } from '../../utils/haptics';
 import api from '../../services/api';
+import { CLERK_PUBLISHABLE_KEY } from '../../constants/config';
+
+// Safe wrapper: only call useAuth if Clerk is actually configured
+function useSignOut(): () => Promise<void> {
+  if (!CLERK_PUBLISHABLE_KEY && __DEV__) {
+    return async () => {};
+  }
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { useAuth } = require('@clerk/clerk-expo');
+  const { signOut } = useAuth();
+  return signOut;
+}
 
 interface NotifPrefs {
   eventReminders: boolean;
@@ -16,8 +29,11 @@ interface NotifPrefs {
 }
 
 export default function SettingsScreen({ navigation }: { navigation: any }) {
-  const { signOut } = useAuth();
+  const signOut = useSignOut();
   const setUser = useAuthStore((s) => s.setUser);
+  const themeMode = useThemeStore((s) => s.mode);
+  const toggleTheme = useThemeStore((s) => s.toggle);
+  const colors = useColors();
   const [prefs, setPrefs] = useState<NotifPrefs | null>(null);
 
   useEffect(() => {
@@ -101,9 +117,25 @@ export default function SettingsScreen({ navigation }: { navigation: any }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={styles.content}>
+      {/* Appearance */}
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Appearance</Text>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+        <View style={styles.settingRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Ionicons name={themeMode === 'dark' ? 'moon' : 'sunny'} size={18} color={colors.accent} />
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
+          </View>
+          <Switch
+            value={themeMode === 'dark'}
+            onValueChange={() => { hapticTap(); toggleTheme(); }}
+            trackColor={{ true: colors.accent, false: '#ccc' }}
+          />
+        </View>
+      </View>
+
       {/* Notifications */}
-      <Text style={styles.sectionTitle}>Notifications</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Notifications</Text>
       <View style={styles.card}>
         <View style={styles.settingRow}>
           <Text style={styles.settingLabel}>Event reminders</Text>

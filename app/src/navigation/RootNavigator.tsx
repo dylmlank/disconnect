@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore, themes } from '../store/themeStore';
 import { setTokenProvider } from '../services/api';
 import { useScreenTime } from '../hooks/useScreenTime';
 import { useNotifications } from '../hooks/useNotifications';
@@ -68,26 +69,35 @@ import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/Onboardi
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const DarkTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: '#0a0a0a',
-    card: '#0a0a0a',
-    text: '#fff',
-    border: '#1a1a1a',
-    primary: '#4ade80',
-  },
-};
+function useNavTheme() {
+  const mode = useThemeStore((s) => s.mode);
+  const colors = themes[mode];
+  return {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: colors.bg,
+      card: colors.bg,
+      text: colors.text,
+      border: colors.separator,
+      primary: colors.accent,
+    },
+  };
+}
 
-const screenDefaults = {
-  headerStyle: { backgroundColor: '#0a0a0a' },
-  headerTintColor: '#fff',
-  headerShadowVisible: false,
-  headerTitleStyle: { fontSize: 17, fontWeight: '600' as const },
-};
+function useScreenDefaults() {
+  const mode = useThemeStore((s) => s.mode);
+  const colors = themes[mode];
+  return {
+    headerStyle: { backgroundColor: colors.bg },
+    headerTintColor: colors.text,
+    headerShadowVisible: false,
+    headerTitleStyle: { fontSize: 17, fontWeight: '600' as const },
+  };
+}
 
 function EventsStack() {
+  const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="EventList" component={EventListScreen} options={{ title: 'Events' }} />
@@ -101,6 +111,7 @@ function EventsStack() {
 }
 
 function BeaconsStack() {
+  const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="BeaconMap" component={BeaconMapScreen} options={{ title: 'Beacons', headerShown: false }} />
@@ -110,6 +121,7 @@ function BeaconsStack() {
 }
 
 function ProfileStack() {
+  const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'You' }} />
@@ -125,6 +137,7 @@ function ProfileStack() {
 }
 
 function HubStack() {
+  const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="Hub" component={HubScreen} options={{ headerShown: false }} />
@@ -144,6 +157,7 @@ function HubStack() {
 }
 
 function SocialStack() {
+  const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="Circles" component={CirclesScreen} options={{ title: 'Circles' }} />
@@ -178,21 +192,24 @@ const tabStyles = StyleSheet.create({
 });
 
 function MainTabs() {
+  const mode = useThemeStore((s) => s.mode);
+  const colors = themes[mode];
+
   return (
     <Tab.Navigator
       initialRouteName="HubTab"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0a0a0a',
-          borderTopColor: '#141414',
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBorder,
           borderTopWidth: 1,
           height: 58,
           paddingBottom: 4,
           paddingTop: 4,
         },
-        tabBarActiveTintColor: '#4ade80',
-        tabBarInactiveTintColor: '#444',
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: -2 },
       }}
     >
@@ -233,15 +250,20 @@ export default function RootNavigator() {
   const { isSignedIn, isLoaded, getToken } = useAuth();
   const user = useAuthStore((s) => s.user);
   const fetchMe = useAuthStore((s) => s.fetchMe);
+  const loadTheme = useThemeStore((s) => s.load);
+  const mode = useThemeStore((s) => s.mode);
+  const colors = themes[mode];
   const { showNudge, dismissNudge } = useScreenTime();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+  const navTheme = useNavTheme();
 
   // Sync location to server for Discover feature
   useLocationSync();
 
-  // Check onboarding status
+  // Load theme + check onboarding status
   useEffect(() => {
+    loadTheme();
     AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
       setOnboardingDone(val === 'true');
     });
@@ -284,8 +306,8 @@ export default function RootNavigator() {
 
   if (!isLoaded || onboardingDone === null) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#4ade80" />
+      <View style={[styles.loading, { backgroundColor: colors.bg }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -311,7 +333,7 @@ export default function RootNavigator() {
 
   return (
     <View style={{ flex: 1 }}>
-      <NavigationContainer ref={navigationRef} theme={DarkTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
         {content}
       </NavigationContainer>
       <AchievementToast />
@@ -321,5 +343,5 @@ export default function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

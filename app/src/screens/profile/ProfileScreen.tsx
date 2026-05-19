@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { useScreenTime } from '../../hooks/useScreenTime';
+import { useThemeStore, themes } from '../../store/themeStore';
 import { INTERESTS } from '../../constants/interests';
 import ProgressRing from '../../components/ProgressRing';
 import api from '../../services/api';
@@ -29,6 +30,8 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const { weeklyMinutes } = useScreenTime();
+  const mode = useThemeStore((s) => s.mode);
+  const colors = themes[mode];
   const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [focusMinutes, setFocusMinutes] = useState(0);
@@ -115,7 +118,7 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={styles.content}>
       {/* Avatar — tap to change photo */}
       <TouchableOpacity onPress={handlePickPhoto} disabled={uploading}>
         {photoUri ? (
@@ -128,7 +131,7 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <Text style={styles.photoHint}>{uploading ? 'Uploading...' : 'Tap to change'}</Text>
       </TouchableOpacity>
 
-      <Text style={styles.name}>{user.firstName}</Text>
+      <Text style={[styles.name, { color: colors.text }]}>{user.firstName}</Text>
       {user.isMinor && <Text style={styles.ageBadge}>Under 18</Text>}
 
       {/* Level + XP ring */}
