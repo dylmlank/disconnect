@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useBeaconStore } from '../../store/beaconStore';
 import { useLocation } from '../../hooks/useLocation';
+import { hapticTap } from '../../utils/haptics';
+
+const QUICK_ACTIVITIES = [
+  { emoji: '☕', label: 'Coffee' },
+  { emoji: '📚', label: 'Study' },
+  { emoji: '🏃', label: 'Run' },
+  { emoji: '🏀', label: 'Basketball' },
+  { emoji: '🎸', label: 'Music' },
+  { emoji: '🍕', label: 'Food' },
+  { emoji: '🌳', label: 'Park' },
+  { emoji: '🎮', label: 'Games' },
+];
 
 export default function CreateBeaconScreen({ navigation }: { navigation: any }) {
   const [message, setMessage] = useState('');
@@ -34,7 +46,7 @@ export default function CreateBeaconScreen({ navigation }: { navigation: any }) 
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Drop a Beacon</Text>
       <Text style={styles.subtitle}>Let nearby people know you're here. Expires in 2 hours.</Text>
 
@@ -50,13 +62,25 @@ export default function CreateBeaconScreen({ navigation }: { navigation: any }) 
       />
       <Text style={styles.charCount}>{message.length}/140</Text>
 
-      <Text style={styles.label}>Activity (optional)</Text>
+      <Text style={styles.label}>Activity</Text>
+      <View style={styles.quickRow}>
+        {QUICK_ACTIVITIES.map((qa) => (
+          <TouchableOpacity
+            key={qa.label}
+            style={[styles.quickChip, activity === qa.label && styles.quickChipSelected]}
+            onPress={() => { hapticTap(); setActivity(activity === qa.label ? '' : qa.label); }}
+          >
+            <Text style={styles.quickEmoji}>{qa.emoji}</Text>
+            <Text style={[styles.quickLabel, activity === qa.label && styles.quickLabelSelected]}>{qa.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.inputSmall]}
         value={activity}
         onChangeText={setActivity}
-        placeholder="Frisbee, coffee, study..."
-        placeholderTextColor="#555"
+        placeholder="Or type something else..."
+        placeholderTextColor="#444"
         maxLength={50}
       />
 
@@ -73,12 +97,13 @@ export default function CreateBeaconScreen({ navigation }: { navigation: any }) 
       <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Dropping...' : 'Drop Beacon'}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 24 },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  content: { padding: 24, paddingBottom: 48 },
   title: { fontSize: 28, fontWeight: '800', color: '#fff', marginTop: 8 },
   subtitle: { fontSize: 14, color: '#888', marginTop: 4, marginBottom: 24 },
   label: { fontSize: 14, color: '#aaa', fontWeight: '600', marginTop: 16, marginBottom: 8 },
@@ -86,7 +111,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, fontSize: 16,
     color: '#fff', borderWidth: 1, borderColor: '#333',
   },
+  inputSmall: { paddingVertical: 12, fontSize: 14, marginTop: 10 },
   charCount: { fontSize: 12, color: '#555', textAlign: 'right', marginTop: 4 },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  quickChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#1a1a1a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    borderWidth: 1, borderColor: '#262626',
+  },
+  quickChipSelected: { borderColor: '#4ade80', backgroundColor: '#0a2a0a' },
+  quickEmoji: { fontSize: 16 },
+  quickLabel: { fontSize: 13, color: '#888', fontWeight: '500' },
+  quickLabelSelected: { color: '#4ade80' },
   button: { backgroundColor: '#4ade80', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 32 },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { fontSize: 16, fontWeight: '700', color: '#0a0a0a' },

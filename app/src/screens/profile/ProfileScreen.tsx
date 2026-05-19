@@ -14,6 +14,7 @@ interface UserStats {
   eventsThisMonth: number;
   eventsAllTime: number;
   weeklyStreak: number;
+  dailyStreak: number;
   beaconsDropped: number;
 }
 
@@ -188,25 +189,25 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
         <View style={styles.statsCard}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
+              <Text style={[styles.statValue, styles.streakValue]}>{stats.dailyStreak}</Text>
+              <Text style={styles.statLabel}>Day streak</Text>
+            </View>
+            <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.eventsThisMonth}</Text>
-              <Text style={styles.statLabel}>This month</Text>
+              <Text style={styles.statLabel}>Events</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.eventsAllTime}</Text>
               <Text style={styles.statLabel}>All time</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, styles.streakValue]}>{stats.weeklyStreak}</Text>
-              <Text style={styles.statLabel}>Week streak</Text>
-            </View>
-            <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.beaconsDropped}</Text>
               <Text style={styles.statLabel}>Beacons</Text>
             </View>
           </View>
-          {stats.weeklyStreak > 0 && (
+          {stats.dailyStreak > 0 && (
             <Text style={styles.streakMessage}>
-              {stats.weeklyStreak >= 4 ? "You're on fire! Keep going outside." : `${stats.weeklyStreak} week streak — nice!`}
+              {stats.dailyStreak >= 14 ? "You're on fire! 🔥🔥" : stats.dailyStreak >= 7 ? `${stats.dailyStreak} days strong! 🔥` : `${stats.dailyStreak} day streak — keep going! ✨`}
             </Text>
           )}
         </View>
