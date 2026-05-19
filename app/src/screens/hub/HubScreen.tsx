@@ -473,6 +473,35 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         </View>
       )}
 
+      {/* ── Suggestion ────────────────────────────────────── */}
+      {dailyScore < 3 && (
+        <TouchableOpacity
+          style={[styles.suggestionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+          onPress={() => {
+            hapticTap();
+            if (!todayVibe) navigation.navigate('VibeCheck');
+            else if (!todayCheckIn) navigation.navigate('CheckIn');
+            else if (completedHabits < totalHabits) navigation.navigate('Habits');
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.suggestionEmoji}>
+            {!todayVibe ? '✨' : !todayCheckIn ? '💚' : '🌿'}
+          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.suggestionTitle, { color: colors.text }]}>
+              {!todayVibe ? 'Set your vibe' : !todayCheckIn ? 'Check in' : 'Log a habit'}
+            </Text>
+            <Text style={[styles.suggestionSub, { color: colors.textMuted }]}>
+              {!todayVibe ? 'Takes 2 seconds — how are you today?' :
+               !todayCheckIn ? 'One good thing + your mood' :
+               `${totalHabits - completedHabits} remaining`}
+            </Text>
+          </View>
+          <Ionicons name="arrow-forward-circle" size={24} color={colors.accent} />
+        </TouchableOpacity>
+      )}
+
       {/* ── Science Bite ─────────────────────────────────── */}
       <View style={[styles.scienceBite, { backgroundColor: colors.bgSecondary, borderColor: colors.cardBorder }]}>
         <Text style={styles.scienceEmoji}>{todaysBite.emoji}</Text>
@@ -621,6 +650,16 @@ const styles = StyleSheet.create({
   activityDot: { fontSize: 14 },
   activityText: { fontSize: 13, flex: 1 },
   activityName: { fontWeight: '600' },
+
+  // Suggestion card
+  suggestionCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderRadius: 14, padding: 16, marginTop: 16, marginBottom: 4,
+    borderWidth: 1,
+  },
+  suggestionEmoji: { fontSize: 24 },
+  suggestionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  suggestionSub: { fontSize: 12 },
 
   // Science bite
   scienceBite: {
