@@ -2,6 +2,19 @@ import 'dotenv/config';
 import { db } from '../config/database';
 
 export async function cleanDb() {
+  // Platform expansion tables
+  await db('reactions').del().catch(() => {});
+  await db('challenge_logs').del().catch(() => {});
+  await db('challenge_participants').del().catch(() => {});
+  await db('challenges').del().catch(() => {});
+  await db('habit_logs').del().catch(() => {});
+  await db('user_habits').del().catch(() => {});
+  await db('check_ins').del().catch(() => {});
+  await db('focus_sessions').del().catch(() => {});
+  await db('circle_messages').del().catch(() => {});
+  await db('circle_members').del().catch(() => {});
+  await db('circles').del().catch(() => {});
+  // MVP tables
   await db('beacon_interests').del();
   await db('event_rsvps').del();
   await db('event_chat_messages').del();
@@ -72,6 +85,22 @@ export async function createTestBeacon(creatorId: string, overrides: Record<stri
     .returning('*');
 
   return beacon;
+}
+
+export async function createTestCircle(creatorId: string, name = 'Test Circle') {
+  const inviteCode = Math.random().toString(36).slice(2, 10);
+
+  const [circle] = await db('circles')
+    .insert({
+      name,
+      creator_id: creatorId,
+      invite_code: inviteCode,
+    })
+    .returning('*');
+
+  await db('circle_members').insert({ circle_id: circle.id, user_id: creatorId });
+
+  return { circle, inviteCode };
 }
 
 export { db };
