@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useChallengeStore } from '../../store/challengeStore';
+import { CHALLENGE_TEMPLATES } from '@disconnect/shared';
 import ChallengeCard from '../../components/ChallengeCard';
 import type { Challenge } from '@disconnect/shared';
 
@@ -44,6 +45,10 @@ export default function ChallengesScreen() {
   }
 
   const data: Challenge[] = tab === 'public' ? challenges : myChallenges;
+
+  // Pick a featured template based on the day
+  const dayIndex = new Date().getDate() % CHALLENGE_TEMPLATES.length;
+  const featured = CHALLENGE_TEMPLATES[dayIndex];
 
   return (
     <View style={styles.container}>
@@ -89,6 +94,23 @@ export default function ChallengesScreen() {
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            tab === 'public' && myChallenges.length === 0 ? (
+              <TouchableOpacity
+                style={styles.featuredCard}
+                onPress={() => navigation.navigate('CreateChallenge', { templateId: featured.id })}
+                activeOpacity={0.8}
+              >
+                <View style={styles.featuredBadge}>
+                  <Ionicons name="sparkles" size={12} color="#f59e0b" />
+                  <Text style={styles.featuredBadgeText}>Suggested</Text>
+                </View>
+                <Text style={styles.featuredTitle}>{featured.title}</Text>
+                <Text style={styles.featuredDesc}>{featured.description}</Text>
+                <Text style={styles.featuredDuration}>{featured.durationDays} days · tap to start</Text>
+              </TouchableOpacity>
+            ) : null
+          }
           renderItem={({ item }) => (
             <ChallengeCard
               challenge={item}
@@ -124,6 +146,18 @@ const styles = StyleSheet.create({
   toggleText: { fontSize: 14, fontWeight: '600', color: '#666' },
   toggleTextActive: { color: '#0a0a0a' },
   list: { paddingHorizontal: 16, paddingBottom: 100 },
+  featuredCard: {
+    backgroundColor: '#1a1a0a', borderRadius: 16, padding: 18, marginBottom: 16,
+    borderWidth: 1, borderColor: '#3a3a0a',
+  },
+  featuredBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    alignSelf: 'flex-start', marginBottom: 8,
+  },
+  featuredBadgeText: { fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase' },
+  featuredTitle: { fontSize: 18, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  featuredDesc: { fontSize: 13, color: '#aaa', lineHeight: 19, marginBottom: 8 },
+  featuredDuration: { fontSize: 12, color: '#f59e0b', fontWeight: '600' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginTop: 16, marginBottom: 8 },
   emptyText: { fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 20 },
