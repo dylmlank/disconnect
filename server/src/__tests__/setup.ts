@@ -3,6 +3,7 @@ import { db } from '../config/database';
 
 export async function cleanDb() {
   // Platform expansion tables
+  await db('nudges').del().catch(() => {});
   await db('reactions').del().catch(() => {});
   await db('challenge_logs').del().catch(() => {});
   await db('challenge_participants').del().catch(() => {});

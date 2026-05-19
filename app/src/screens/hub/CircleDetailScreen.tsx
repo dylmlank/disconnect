@@ -1,19 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCircleStore } from '../../store/circleStore';
 import { useAuthStore } from '../../store/authStore';
+import { useNudgeStore } from '../../store/nudgeStore';
 import UserAvatar from '../../components/UserAvatar';
 import CircleFeedItemComponent from '../../components/CircleFeedItem';
+import { hapticTap } from '../../utils/haptics';
 
 export default function CircleDetailScreen({ route, navigation }: { route: any; navigation: any }) {
   const { circleId } = route.params;
   const { currentCircle, groupStreak, feed, isLoading, fetchCircle, fetchFeed, leaveCircle } = useCircleStore();
   const user = useAuthStore((s) => s.user);
+  const { circleActivity, fetchCircleActivity, sendNudge } = useNudgeStore();
+  const [nudgeSending, setNudgeSending] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCircle(circleId);
     fetchFeed(circleId);
+    fetchCircleActivity(circleId);
   }, [circleId]);
 
   const handleShare = async () => {
@@ -82,6 +87,55 @@ export default function CircleDetailScreen({ route, navigation }: { route: any; 
         </View>
       )}
 
+      {/* Accountability — who's active today */}
+      {circleActivity.length > 0 && (
+        <View style={styles.activitySection}>
+          <Text style={styles.activityTitle}>Today's Activity</Text>
+          <View style={styles.activityGrid}>
+            {circleActivity
+              .filter((m) => m.userId !== user?.id)
+              .map((member) => (
+                <View key={member.userId} style={styles.activityItem}>
+                  <View style={styles.activityAvatar}>
+                    <UserAvatar firstName={member.firstName} photoUrl={member.photoUrl} size={36} />
+                    {member.activeToday && <View style={styles.activeDot} />}
+                  </View>
+                  <Text style={[styles.activityName, !member.activeToday && styles.inactiveName]}>
+                    {member.firstName}
+                  </Text>
+                  {member.activeToday ? (
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusText}>
+                        {member.checkedIn ? '✓' : ''}{member.habitLogged ? '💪' : ''}{member.focused ? '🎯' : ''}
+                      </Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.nudgeButton}
+                      disabled={nudgeSending === member.userId}
+                      onPress={async () => {
+                        setNudgeSending(member.userId);
+                        hapticTap();
+                        const result = await sendNudge(member.userId, circleId);
+                        setNudgeSending(null);
+                        if (result.success) {
+                          Alert.alert('Nudge sent!', `${member.firstName} will get a notification.`);
+                        } else {
+                          Alert.alert('Oops', result.error || 'Could not send nudge');
+                        }
+                      }}
+                    >
+                      <Text style={styles.nudgeText}>
+                        {nudgeSending === member.userId ? '...' : 'Nudge 👋'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+          </View>
+        </View>
+      )}
+
       {/* Feed */}
       {feed.length === 0 ? (
         <View style={styles.emptyFeed}>
@@ -137,6 +191,18 @@ const styles = StyleSheet.create({
   },
   groupStreakEmoji: { fontSize: 18 },
   groupStreakText: { fontSize: 13, color: '#f59e0b', fontWeight: '600', flex: 1 },
+  activitySection: { paddingHorizontal: 20, marginBottom: 16 },
+  activityTitle: { fontSize: 13, fontWeight: '700', color: '#666', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  activityItem: { alignItems: 'center', width: 72, gap: 4 },
+  activityAvatar: { position: 'relative' },
+  activeDot: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: '#4ade80', borderWidth: 2, borderColor: '#0a0a0a' },
+  activityName: { fontSize: 11, color: '#ccc', fontWeight: '500' },
+  inactiveName: { color: '#555' },
+  statusBadge: { flexDirection: 'row' },
+  statusText: { fontSize: 12 },
+  nudgeButton: { backgroundColor: '#1a2a1a', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: '#2a3a2a' },
+  nudgeText: { fontSize: 11, color: '#4ade80', fontWeight: '600' },
   feed: { flex: 1, borderTopWidth: 1, borderTopColor: '#262626' },
   chatButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
