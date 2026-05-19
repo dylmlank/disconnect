@@ -4,7 +4,7 @@ import multer from 'multer';
 import { authenticate } from '../middleware/auth';
 import { findUserById, updateUser, toUser } from '../models/user';
 import { uploadPhoto } from '../services/storage';
-import { INTEREST_IDS, MIN_INTERESTS, MAX_INTERESTS } from '@disconnect/shared';
+import { INTEREST_IDS, MIN_INTERESTS, MAX_INTERESTS, LEVELS } from '@disconnect/shared';
 import { getUserLevel } from '../models/level';
 import { db } from '../config/database';
 
@@ -258,6 +258,39 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response) => {
 router.get('/me/level', authenticate, async (req: Request, res: Response) => {
   const levelData = await getUserLevel(req.user.userId);
   res.json({ level: levelData });
+});
+
+// GET /api/users/me/milestones
+router.get('/me/milestones', authenticate, async (req: Request, res: Response) => {
+  const { xp, current, next } = await getUserLevel(req.user.userId);
+
+  // All levels up to and including the current one have been unlocked
+  const unlocked = LEVELS
+    .filter((l) => l.level <= current.level && l.unlocks !== null)
+    .map((l) => ({ level: l.level, name: l.name, emoji: l.emoji, feature: l.unlocks as string }));
+
+  // Locked = levels above current that have something to unlock
+  const locked = LEVELS
+    .filter((l) => l.level > current.level && l.unlocks !== null)
+    .map((l) => ({ level: l.level, name: l.name, emoji: l.emoji, feature: l.unlocks as string, xpRequired: l.xpRequired }));
+
+  res.json({
+    milestones: {
+      xp,
+      currentLevel: {
+        level: current.level,
+        name: current.name,
+        emoji: current.emoji,
+        unlocks: current.unlocks,
+      },
+      nextLevel: next
+        ? { level: next.level, name: next.name, emoji: next.emoji, xpRequired: next.xpRequired, unlocks: next.unlocks }
+        : null,
+      xpToNextLevel: next ? next.xpRequired - xp : null,
+      unlocked,
+      locked,
+    },
+  });
 });
 
 // GET /api/users/:id — view another user's public profile (MUST be last — catches all /:id)

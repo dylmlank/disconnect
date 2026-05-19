@@ -3,19 +3,20 @@ export interface LevelDefinition {
   name: string;
   xpRequired: number;
   emoji: string;
+  unlocks: string | null;
 }
 
 export const LEVELS: readonly LevelDefinition[] = [
-  { level: 1, name: 'newcomer', xpRequired: 0, emoji: '🌱' },
-  { level: 2, name: 'explorer', xpRequired: 50, emoji: '🌿' },
-  { level: 3, name: 'regular', xpRequired: 150, emoji: '🌳' },
-  { level: 4, name: 'committed', xpRequired: 350, emoji: '⭐' },
-  { level: 5, name: 'dedicated', xpRequired: 600, emoji: '🔥' },
-  { level: 6, name: 'focused', xpRequired: 1000, emoji: '🎯' },
-  { level: 7, name: 'consistent', xpRequired: 1500, emoji: '💎' },
-  { level: 8, name: 'unstoppable', xpRequired: 2200, emoji: '⚡' },
-  { level: 9, name: 'inspiring', xpRequired: 3000, emoji: '🌟' },
-  { level: 10, name: 'legendary', xpRequired: 4000, emoji: '👑' },
+  { level: 1,  name: 'newcomer',    xpRequired: 0,    emoji: '🌱', unlocks: null },
+  { level: 2,  name: 'explorer',    xpRequired: 50,   emoji: '🌿', unlocks: 'Create circles' },
+  { level: 3,  name: 'regular',     xpRequired: 150,  emoji: '🌳', unlocks: 'Create challenges' },
+  { level: 4,  name: 'committed',   xpRequired: 350,  emoji: '⭐', unlocks: 'Custom challenge templates' },
+  { level: 5,  name: 'dedicated',   xpRequired: 600,  emoji: '🔥', unlocks: 'Create public challenges' },
+  { level: 6,  name: 'focused',     xpRequired: 1000, emoji: '🎯', unlocks: 'Walk & Talk rooms' },
+  { level: 7,  name: 'consistent',  xpRequired: 1500, emoji: '💎', unlocks: 'Custom habit names' },
+  { level: 8,  name: 'unstoppable', xpRequired: 2200, emoji: '⚡', unlocks: 'Extended focus sessions (3hr)' },
+  { level: 9,  name: 'inspiring',   xpRequired: 3000, emoji: '🌟', unlocks: 'City-wide challenges' },
+  { level: 10, name: 'legendary',   xpRequired: 4000, emoji: '👑', unlocks: 'Gold profile badge' },
 ] as const;
 
 // XP is earned from:

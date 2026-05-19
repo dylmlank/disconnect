@@ -11,13 +11,16 @@ if (Platform.OS !== 'web') {
   DateTimePicker = require('@react-native-community/datetimepicker').default;
 }
 
-export default function CreateEventScreen({ navigation }: { navigation: any }) {
-  const [title, setTitle] = useState('');
+export default function CreateEventScreen({ navigation, route }: { navigation: any; route: any }) {
+  const prefillTitle: string = route?.params?.prefillTitle ?? '';
+  const prefillCategory: string = route?.params?.prefillCategory ?? '';
+
+  const [title, setTitle] = useState(prefillTitle);
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [startsAt, setStartsAt] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(prefillCategory || null);
   const [maxAttendees, setMaxAttendees] = useState('20');
   const [allAges, setAllAges] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useLocation } from '../../hooks/useLocation';
 import EventCard from '../../components/EventCard';
 import ActivityFeed from '../../components/ActivityFeed';
+import EventSuggestionCard from '../../components/EventSuggestionCard';
 import { EVENT_CATEGORIES } from '../../constants/categories';
 import type { EventCategory, EventWithDistance } from '@disconnect/shared';
 import api from '../../services/api';
@@ -124,6 +125,17 @@ export default function EventListScreen({ navigation }: { navigation: any }) {
         lng={location.longitude}
         onEventPress={(eventId) => navigation.navigate('EventDetail', { eventId })}
       />
+
+      {/* Event suggestions from active challenges nearby */}
+      {!selectedCategory && (
+        <EventSuggestionCard
+          lat={location.latitude}
+          lng={location.longitude}
+          onCreateEvent={(title, category) =>
+            navigation.navigate('CreateEvent', { prefillTitle: title, prefillCategory: category })
+          }
+        />
+      )}
 
       {/* Event list - finite, no infinite scroll */}
       {isLoading ? (
