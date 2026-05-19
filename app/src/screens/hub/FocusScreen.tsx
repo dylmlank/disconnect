@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusStore } from '../../store/focusStore';
 import { useFocusTimer } from '../../hooks/useFocusTimer';
+import { hapticTap, hapticSuccess, hapticHeavy } from '../../utils/haptics';
 import FocusTimer from '../../components/FocusTimer';
 import type { FocusSession } from '@disconnect/shared';
 
@@ -46,6 +47,7 @@ export default function FocusScreen() {
   }, []);
 
   async function handleTimerComplete() {
+    hapticSuccess();
     if (currentSession) {
       try {
         await completeSession(currentSession.id);
@@ -58,6 +60,7 @@ export default function FocusScreen() {
 
   async function handleStart() {
     if (isStarting) return;
+    hapticHeavy();
     setIsStarting(true);
     try {
       const session = await startSession(finalDuration, intention || undefined);

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { hapticTap, hapticSuccess } from '../../utils/haptics';
 import api from '../../services/api';
 
 const VIBES = [
@@ -26,11 +27,13 @@ export default function VibeCheckScreen({ navigation }: { navigation: any }) {
   }, []);
 
   const handleSelect = async (vibeId: string) => {
+    hapticTap();
     setSelected(vibeId);
     setSubmitted(true);
 
     // Animate
     Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }).start();
+    hapticSuccess();
 
     try {
       await api.post('/vibes', { vibe: vibeId });
@@ -38,8 +41,8 @@ export default function VibeCheckScreen({ navigation }: { navigation: any }) {
       // ignore
     }
 
-    // Auto-close after 2 seconds
-    setTimeout(() => navigation.goBack(), 2000);
+    // Auto-close after 1.5 seconds
+    setTimeout(() => navigation.goBack(), 1500);
   };
 
   const selectedVibe = VIBES.find((v) => v.id === selected);

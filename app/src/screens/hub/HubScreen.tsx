@@ -164,6 +164,30 @@ export default function HubScreen({ navigation }: { navigation: any }) {
 
       {streak > 0 && <StreakBanner streak={streak} />}
 
+      {/* ── Getting Started (shown when no habits yet) ── */}
+      {habits.length === 0 && !todayCheckIn && (
+        <View style={[styles.getStartedCard, { backgroundColor: colors.card, borderColor: colors.accent }]}>
+          <Text style={[styles.getStartedTitle, { color: colors.text }]}>Get started</Text>
+          <Text style={[styles.getStartedSub, { color: colors.textSecondary }]}>
+            Pick a few habits to track, set your vibe, and check in daily.
+          </Text>
+          <View style={styles.getStartedActions}>
+            <TouchableOpacity
+              style={[styles.getStartedBtn, { backgroundColor: colors.accent }]}
+              onPress={() => { hapticTap(); navigation.navigate('Habits'); }}
+            >
+              <Text style={styles.getStartedBtnText}>Add Habits</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.getStartedBtnOutline, { borderColor: colors.cardBorder }]}
+              onPress={() => { hapticTap(); navigation.navigate('VibeCheck'); }}
+            >
+              <Text style={[styles.getStartedBtnOutlineText, { color: colors.text }]}>Set Vibe</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* ── Daily Progress Bar ──────────────────────────── */}
       <View style={[styles.dailyProgress, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.dailyProgressHeader}>
@@ -396,6 +420,24 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
   levelLabel: { fontSize: 13, fontWeight: '500' },
   levelNum: { fontSize: 14, fontWeight: '800' },
+
+  // Get Started
+  getStartedCard: {
+    borderRadius: 16, padding: 20, marginBottom: 16, marginTop: 8,
+    borderWidth: 1.5,
+  },
+  getStartedTitle: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  getStartedSub: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  getStartedActions: { flexDirection: 'row', gap: 10 },
+  getStartedBtn: {
+    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
+  },
+  getStartedBtnText: { fontSize: 14, fontWeight: '700', color: '#0a0a0a' },
+  getStartedBtnOutline: {
+    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
+    borderWidth: 1,
+  },
+  getStartedBtnOutlineText: { fontSize: 14, fontWeight: '600' },
 
   // Daily Progress
   dailyProgress: {
