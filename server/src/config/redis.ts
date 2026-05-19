@@ -1,13 +1,33 @@
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { env } from './env';
 
-export const redis = createClient({ url: env.REDIS_URL });
+export let redis: RedisClientType;
 
-redis.on('error', (err) => {
-  console.error('Redis error:', err);
-});
+let connected = false;
+
+export function isRedisConnected(): boolean {
+  return connected;
+}
 
 export async function connectRedis() {
-  await redis.connect();
-  console.log('Redis connected');
+  if (!env.REDIS_URL) {
+    console.warn('⚠ REDIS_URL not set — rate limiting and caching disabled');
+    return;
+  }
+
+  try {
+    redis = createClient({ url: env.REDIS_URL });
+    redis.on('error', (err) => {
+      if (connected) console.error('Redis error:', err);
+    });
+    await redis.connect();
+    connected = true;
+    console.log('Redis connected');
+  } catch (err) {
+    if (env.NODE_ENV === 'development') {
+      console.warn('⚠ Redis unavailable — running without it (rate limiting disabled)');
+    } else {
+      throw err;
+    }
+  }
 }
