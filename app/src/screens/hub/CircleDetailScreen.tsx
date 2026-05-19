@@ -8,7 +8,7 @@ import CircleFeedItemComponent from '../../components/CircleFeedItem';
 
 export default function CircleDetailScreen({ route, navigation }: { route: any; navigation: any }) {
   const { circleId } = route.params;
-  const { currentCircle, feed, isLoading, fetchCircle, fetchFeed, leaveCircle } = useCircleStore();
+  const { currentCircle, groupStreak, feed, isLoading, fetchCircle, fetchFeed, leaveCircle } = useCircleStore();
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
@@ -72,6 +72,16 @@ export default function CircleDetailScreen({ route, navigation }: { route: any; 
         ))}
       </View>
 
+      {/* Group Streak */}
+      {groupStreak > 0 && (
+        <View style={styles.groupStreakBanner}>
+          <Text style={styles.groupStreakEmoji}>{groupStreak >= 7 ? '🔥' : '✨'}</Text>
+          <Text style={styles.groupStreakText}>
+            {groupStreak}-day group streak — everyone logged a habit!
+          </Text>
+        </View>
+      )}
+
       {/* Feed */}
       {feed.length === 0 ? (
         <View style={styles.emptyFeed}>
@@ -117,9 +127,16 @@ const styles = StyleSheet.create({
   codeLabel: { fontSize: 13, color: '#888' },
   code: { fontSize: 13, fontWeight: '700', color: '#4ade80', fontFamily: 'monospace' },
   shareButton: { marginLeft: 8, padding: 4 },
-  membersRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 8, marginBottom: 16 },
+  membersRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 8, marginBottom: 12 },
   memberChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingRight: 12, paddingLeft: 4, paddingVertical: 4, gap: 6 },
   memberName: { fontSize: 13, color: '#ccc' },
+  groupStreakBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 16,
+    backgroundColor: '#1a1a0a', borderRadius: 12, padding: 12,
+    borderWidth: 1, borderColor: '#3a3a0a',
+  },
+  groupStreakEmoji: { fontSize: 18 },
+  groupStreakText: { fontSize: 13, color: '#f59e0b', fontWeight: '600', flex: 1 },
   feed: { flex: 1, borderTopWidth: 1, borderTopColor: '#262626' },
   chatButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

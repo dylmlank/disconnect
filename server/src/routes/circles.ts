@@ -13,6 +13,7 @@ import {
   getCircleFeed,
 } from '../models/circle';
 import { getCircleMessages, sendCircleMessage } from '../models/circleMessage';
+import { getCircleGroupStreak } from '../models/social';
 
 const router = Router();
 
@@ -55,7 +56,8 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
     return;
   }
 
-  res.json({ circle: detail });
+  const groupStreak = await getCircleGroupStreak(req.params.id as string);
+  res.json({ circle: detail, groupStreak });
 });
 
 // POST /api/circles/:id/join

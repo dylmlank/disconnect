@@ -42,11 +42,26 @@ export default function CircleChatScreen({ route }: { route: any }) {
     if (!trimmed || sending) return;
     setSending(true);
     setText('');
+
+    // Optimistic: add message immediately
+    const optimisticMsg: CircleMessage = {
+      id: `opt-${Date.now()}`,
+      senderId: user?.id ?? '',
+      senderName: user?.firstName ?? '',
+      senderPhotoUrl: user?.photoUrl ?? null,
+      message: trimmed,
+      sentAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
       const { data } = await api.post(`/circles/${circleId}/messages`, { message: trimmed });
-      setMessages((prev) => [...prev, data.message]);
+      // Replace optimistic with real
+      setMessages((prev) => prev.map((m) => m.id === optimisticMsg.id ? data.message : m));
     } catch {
-      setText(trimmed); // restore on failure
+      // Remove optimistic, restore text
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+      setText(trimmed);
     } finally {
       setSending(false);
     }

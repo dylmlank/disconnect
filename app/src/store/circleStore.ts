@@ -5,6 +5,7 @@ import type { Circle, CircleDetail, CircleFeedItem } from '@disconnect/shared';
 interface CircleState {
   circles: Circle[];
   currentCircle: CircleDetail | null;
+  groupStreak: number;
   feed: CircleFeedItem[];
   isLoading: boolean;
 
@@ -19,6 +20,7 @@ interface CircleState {
 export const useCircleStore = create<CircleState>((set) => ({
   circles: [],
   currentCircle: null,
+  groupStreak: 0,
   feed: [],
   isLoading: false,
 
@@ -36,7 +38,7 @@ export const useCircleStore = create<CircleState>((set) => ({
     set({ isLoading: true });
     try {
       const { data } = await api.get(`/circles/${id}`);
-      set({ currentCircle: data.circle });
+      set({ currentCircle: data.circle, groupStreak: data.groupStreak ?? 0 });
     } finally {
       set({ isLoading: false });
     }
