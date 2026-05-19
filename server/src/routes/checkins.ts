@@ -9,8 +9,8 @@ const router = Router();
 const createCheckInSchema = z.object({
   mood: z.number().int().min(1).max(5),
   goodThing1: z.string().min(1).max(100),
-  goodThing2: z.string().min(1).max(100),
-  goodThing3: z.string().min(1).max(100),
+  goodThing2: z.string().max(100).optional(),
+  goodThing3: z.string().max(100).optional(),
   intention: z.string().max(50).optional(),
 });
 

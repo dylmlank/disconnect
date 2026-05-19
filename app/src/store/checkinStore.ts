@@ -12,8 +12,8 @@ interface CheckInState {
   submitCheckIn: (data: {
     mood: number;
     goodThing1: string;
-    goodThing2: string;
-    goodThing3: string;
+    goodThing2?: string;
+    goodThing3?: string;
     intention?: string;
   }) => Promise<void>;
 }

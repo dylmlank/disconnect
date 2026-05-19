@@ -45,7 +45,7 @@ export default function CheckInScreen() {
     fetchToday();
   }, []);
 
-  const canSubmit = mood !== null && good1.trim().length > 0 && good2.trim().length > 0 && good3.trim().length > 0;
+  const canSubmit = mood !== null && good1.trim().length > 0;
 
   async function handleSubmit() {
     if (!canSubmit || !mood) return;
@@ -54,8 +54,8 @@ export default function CheckInScreen() {
       await submitCheckIn({
         mood,
         goodThing1: good1.trim(),
-        goodThing2: good2.trim(),
-        goodThing3: good3.trim(),
+        goodThing2: good2.trim() || undefined,
+        goodThing3: good3.trim() || undefined,
         intention: intention.trim() || undefined,
       });
       const randomMsg = ENCOURAGING_MESSAGES[Math.floor(Math.random() * ENCOURAGING_MESSAGES.length)];
@@ -90,10 +90,10 @@ export default function CheckInScreen() {
           </Text>
         </View>
         <View style={styles.section}>
-          <Text style={styles.label}>3 Good Things</Text>
+          <Text style={styles.label}>Good Things</Text>
           <Text style={styles.readValue}>1. {existing.goodThing1}</Text>
-          <Text style={styles.readValue}>2. {existing.goodThing2}</Text>
-          <Text style={styles.readValue}>3. {existing.goodThing3}</Text>
+          {existing.goodThing2 ? <Text style={styles.readValue}>2. {existing.goodThing2}</Text> : null}
+          {existing.goodThing3 ? <Text style={styles.readValue}>3. {existing.goodThing3}</Text> : null}
         </View>
         {existing.intention ? (
           <View style={styles.section}>
@@ -129,12 +129,12 @@ export default function CheckInScreen() {
           <Text style={styles.moodLabel}>{MOOD_LABELS[mood]}</Text>
         )}
 
-        <Text style={styles.sectionHeading}>3 good things today</Text>
-        <Text style={styles.sectionSubheading}>What are three things you're grateful for?</Text>
+        <Text style={styles.sectionHeading}>Good things today</Text>
+        <Text style={styles.sectionSubheading}>What's at least one thing you're grateful for?</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="First good thing…"
+          placeholder="One good thing…"
           placeholderTextColor="#555"
           value={good1}
           onChangeText={setGood1}
@@ -143,7 +143,7 @@ export default function CheckInScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Second good thing…"
+          placeholder="Another? (optional)"
           placeholderTextColor="#555"
           value={good2}
           onChangeText={setGood2}
@@ -152,7 +152,7 @@ export default function CheckInScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Third good thing…"
+          placeholder="One more? (optional)"
           placeholderTextColor="#555"
           value={good3}
           onChangeText={setGood3}

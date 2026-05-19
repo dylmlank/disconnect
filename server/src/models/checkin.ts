@@ -11,8 +11,8 @@ function mapRow(row: Record<string, unknown>): CheckIn {
     userId: row.user_id as string,
     mood: row.mood as 1 | 2 | 3 | 4 | 5,
     goodThing1: row.good_thing_1 as string,
-    goodThing2: row.good_thing_2 as string,
-    goodThing3: row.good_thing_3 as string,
+    goodThing2: (row.good_thing_2 as string) || '',
+    goodThing3: (row.good_thing_3 as string) || '',
     intention: row.intention as string | null,
     checkInDate: typeof row.check_in_date === 'string'
       ? row.check_in_date
@@ -26,8 +26,8 @@ export async function createCheckIn(
   data: {
     mood: number;
     goodThing1: string;
-    goodThing2: string;
-    goodThing3: string;
+    goodThing2?: string;
+    goodThing3?: string;
     intention?: string;
   },
 ): Promise<CheckIn> {
@@ -43,8 +43,8 @@ export async function createCheckIn(
       user_id: userId,
       mood: data.mood,
       good_thing_1: data.goodThing1,
-      good_thing_2: data.goodThing2,
-      good_thing_3: data.goodThing3,
+      good_thing_2: data.goodThing2 ?? null,
+      good_thing_3: data.goodThing3 ?? null,
       intention: data.intention ?? null,
       check_in_date: today,
     })
