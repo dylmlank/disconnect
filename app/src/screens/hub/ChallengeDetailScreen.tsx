@@ -194,6 +194,19 @@ export default function ChallengeDetailScreen() {
         </View>
       )}
 
+      {/* Certificate button — show when joined */}
+      {c.isJoined && (
+        <TouchableOpacity
+          style={styles.certBtn}
+          onPress={() => navigation.navigate('ChallengeCertificate', { challengeId: c.id })}
+        >
+          <Ionicons name="ribbon-outline" size={18} color="#f59e0b" />
+          <Text style={styles.certBtnText}>
+            {c.myProgress.every((d) => d.completed) ? 'View Certificate 🎉' : 'View Progress Card'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {/* Participants */}
       {c.participants.length > 0 && (
         <View style={styles.section}>
@@ -276,6 +289,20 @@ const styles = StyleSheet.create({
   },
   logBtnDone: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#4ade80' },
   logBtnText: { fontSize: 15, fontWeight: '700', color: '#0a0a0a' },
+
+  certBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a0a',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#3a3a0a',
+  },
+  certBtnText: { fontSize: 14, fontWeight: '600', color: '#f59e0b' },
 
   grid: {
     flexDirection: 'row',

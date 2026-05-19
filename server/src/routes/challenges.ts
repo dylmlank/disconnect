@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import { requireAdult } from '../middleware/ageGate';
 import { rateLimit } from '../middleware/rateLimit';
+import { db } from '../config/database';
 import {
   getPublicChallenges,
   getUserChallenges,
@@ -104,7 +105,78 @@ router.post('/:id/log', authenticate, rateLimit(60, 20, 'challenge_write'), asyn
 
   const { dayNumber, completed, photoUrl } = parsed.data;
   await logDay(req.params.id as string, req.user.userId, dayNumber, completed, photoUrl);
-  res.json({ success: true });
+
+  // Check if challenge is now complete
+  const detail = await getChallengeDetail(req.params.id as string, req.user.userId);
+  const isComplete = detail && detail.myProgress.every((d: any) => d.completed);
+
+  // Mark participant as completed if all days done
+  if (isComplete) {
+    await db('challenge_participants')
+      .where({ challenge_id: req.params.id, user_id: req.user.userId })
+      .update({ completed: true, completed_at: db.fn.now() });
+  }
+
+  res.json({ success: true, challengeComplete: !!isComplete });
+});
+
+// GET /api/challenges/:id/certificate — shareable completion stats
+router.get('/:id/certificate', authenticate, async (req: Request, res: Response) => {
+  const challengeId = req.params.id as string;
+  const userId = req.user.userId;
+
+  const challenge = await db('challenges').where('id', challengeId).first();
+  if (!challenge) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+
+  const participant = await db('challenge_participants')
+    .where({ challenge_id: challengeId, user_id: userId })
+    .first();
+
+  if (!participant) {
+    res.status(404).json({ error: 'not_joined', message: 'You have not joined this challenge' });
+    return;
+  }
+
+  const completedDays = await db('challenge_logs')
+    .where({ challenge_id: challengeId, user_id: userId, completed: true })
+    .count('* as count')
+    .first();
+
+  const totalParticipants = await db('challenge_participants')
+    .where('challenge_id', challengeId)
+    .count('* as count')
+    .first();
+
+  const completedParticipants = await db('challenge_participants')
+    .where({ challenge_id: challengeId, completed: true })
+    .count('* as count')
+    .first();
+
+  const user = await db('users').where('id', userId).select('first_name').first();
+
+  const completionRate = Math.round(
+    (Number(completedDays?.count || 0) / challenge.duration_days) * 100,
+  );
+
+  res.json({
+    certificate: {
+      challengeTitle: challenge.title,
+      category: challenge.category,
+      durationDays: challenge.duration_days,
+      completedDays: Number(completedDays?.count || 0),
+      completionRate,
+      isComplete: participant.completed ?? false,
+      completedAt: participant.completed_at ? new Date(participant.completed_at).toISOString() : null,
+      userName: user?.first_name || 'User',
+      totalParticipants: Number(totalParticipants?.count || 0),
+      finishers: Number(completedParticipants?.count || 0),
+      researchNote: challenge.research_note,
+      dailyRequirement: challenge.daily_requirement,
+    },
+  });
 });
 
 export default router;

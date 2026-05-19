@@ -54,6 +54,7 @@ import VibeCheckScreen from '../screens/hub/VibeCheckScreen';
 import StudyRoomsScreen from '../screens/hub/StudyRoomsScreen';
 import PhotoFeedScreen from '../screens/hub/PhotoFeedScreen';
 import WalkTalkScreen from '../screens/hub/WalkTalkScreen';
+import ChallengeCertificateScreen from '../screens/hub/ChallengeCertificateScreen';
 
 // Social screens (new tab)
 import CirclesScreen from '../screens/hub/CirclesScreen';
@@ -145,6 +146,7 @@ function HubStack() {
       <Stack.Screen name="CheckIn" component={CheckInScreen} options={{ title: 'Check In' }} />
       <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ title: 'Challenges' }} />
       <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} options={{ title: '' }} />
+      <Stack.Screen name="ChallengeCertificate" component={ChallengeCertificateScreen} options={{ title: '', headerShown: false }} />
       <Stack.Screen name="CreateChallenge" component={CreateChallengeScreen} options={{ title: 'New Challenge' }} />
       <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
       <Stack.Screen name="VibeCheck" component={VibeCheckScreen} options={{ title: '', headerShown: false }} />
