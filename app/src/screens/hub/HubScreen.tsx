@@ -9,6 +9,7 @@ import { useFocusStore } from '../../store/focusStore';
 import { useAuthStore } from '../../store/authStore';
 import { useToastStore } from '../../store/toastStore';
 import { useThemeStore, themes } from '../../store/themeStore';
+import { useScreenTime } from '../../hooks/useScreenTime';
 import { CURATED_HABITS, getTodaysBite } from '@disconnect/shared';
 import { hapticTap, hapticSuccess } from '../../utils/haptics';
 import ProgressRing from '../../components/ProgressRing';
@@ -50,6 +51,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const showToast = useToastStore((s) => s.show);
   const mode = useThemeStore((s) => s.mode);
   const colors = themes[mode];
+  const { sessionSeconds } = useScreenTime();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [todayVibe, setTodayVibe] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const [circleActivity, setCircleActivity] = useState<CircleActivity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showGrow, setShowGrow] = useState(false);
+  const [lastFocusAt, setLastFocusAt] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     return Promise.all([
@@ -85,11 +88,15 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         }
       }).catch(() => {}),
       api.get('/users/me/stats').then(({ data }) => {
-        setStreak(data.stats?.weeklyStreak ?? 0);
+        setStreak(data.stats?.dailyStreak ?? data.stats?.weeklyStreak ?? 0);
       }).catch(() => {}),
       api.get('/activity/circle').then(({ data }) => {
         setCircleActivity((data.activities ?? []).slice(0, 3));
       }).catch(() => setCircleActivity([])),
+      api.get('/focus/history', { params: { limit: 1 } }).then(({ data }) => {
+        const sessions = data.sessions ?? [];
+        if (sessions.length > 0) setLastFocusAt(sessions[0].startedAt);
+      }).catch(() => {}),
     ]);
   }, [fetchHabits, fetchToday, fetchCircles, fetchActive]);
 
@@ -107,6 +114,16 @@ export default function HubScreen({ navigation }: { navigation: any }) {
   const totalHabits = habits.length || 1;
   const habitProgress = completedHabits / totalHabits;
   const moodEmojis: Record<number, string> = { 1: '😞', 2: '😐', 3: '🙂', 4: '😊', 5: '🤩' };
+
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 1) return 'just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'yesterday';
+    return `${days}d ago`;
+  };
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -155,6 +172,11 @@ export default function HubScreen({ navigation }: { navigation: any }) {
               {levelInfo.emoji} Lv.{levelInfo.level} · {levelInfo.xp} XP
             </Text>
           )}
+          {sessionSeconds > 30 && (
+            <Text style={[styles.sessionTimer, { color: sessionSeconds > 300 ? '#f87171' : colors.textMuted }]}>
+              {Math.floor(sessionSeconds / 60)}:{(sessionSeconds % 60).toString().padStart(2, '0')} in app
+            </Text>
+          )}
         </View>
         {levelInfo && (
           <ProgressRing size={44} strokeWidth={3} progress={levelInfo.progressPercent / 100} color={colors.accent}>
@@ -164,6 +186,15 @@ export default function HubScreen({ navigation }: { navigation: any }) {
       </View>
 
       {streak > 0 && <StreakBanner streak={streak} />}
+
+      {/* Streak at risk — shown when user has a streak but hasn't engaged today */}
+      {streak > 0 && dailyScore === 0 && (
+        <View style={[styles.streakWarning, { backgroundColor: mode === 'dark' ? '#2a1a0a' : '#fef3c7', borderColor: '#f59e0b' }]}>
+          <Text style={styles.streakWarningText}>
+            ⚡ Your {streak}-day streak is at risk! Do something today to keep it alive.
+          </Text>
+        </View>
+      )}
 
       {/* ── Getting Started (shown when no habits yet) ── */}
       {habits.length === 0 && !todayCheckIn && (
@@ -257,6 +288,19 @@ export default function HubScreen({ navigation }: { navigation: any }) {
         )}
       </View>
 
+      {/* ── All Done Celebration ─────────────────────────── */}
+      {dailyScore === 3 && habits.length > 0 && (
+        <View style={[styles.allDoneCard, { backgroundColor: mode === 'dark' ? '#0d1a0d' : '#dcfce7', borderColor: colors.accent }]}>
+          <Text style={styles.allDoneEmoji}>🎉</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.allDoneTitle, { color: colors.accent }]}>All done for today!</Text>
+            <Text style={[styles.allDoneSub, { color: colors.textSecondary }]}>
+              You've checked in, set your vibe, and logged your habits. Now go live.
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* ── Focus (highlighted if active) ──────────────── */}
       <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -272,7 +316,9 @@ export default function HubScreen({ navigation }: { navigation: any }) {
             <Text style={[styles.cardSub, { color: activeSessions.length > 0 ? '#60a5fa' : colors.textMuted }]}>
               {activeSessions.length > 0
                 ? `${activeSessions.length} ${activeSessions.length === 1 ? 'person' : 'people'} focusing now`
-                : 'Start a focus session'}
+                : lastFocusAt
+                  ? `Last session ${formatTimeAgo(lastFocusAt)}`
+                  : 'Start a focus session'}
             </Text>
           </View>
           {activeSessions.length > 0 && <View style={styles.liveDot} />}
@@ -421,6 +467,7 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
   levelLabel: { fontSize: 13, fontWeight: '500' },
   levelNum: { fontSize: 14, fontWeight: '800' },
+  sessionTimer: { fontSize: 11, fontWeight: '500', marginTop: 2 },
 
   // Get Started
   getStartedCard: {
@@ -439,6 +486,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   getStartedBtnOutlineText: { fontSize: 14, fontWeight: '600' },
+
+  // Streak warning
+  streakWarning: {
+    borderRadius: 12, padding: 12, marginTop: 10, marginBottom: 4,
+    borderWidth: 1,
+  },
+  streakWarningText: { fontSize: 13, fontWeight: '600', color: '#f59e0b', textAlign: 'center' },
+
+  // All done
+  allDoneCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderRadius: 14, padding: 16, marginBottom: 12,
+    borderWidth: 1,
+  },
+  allDoneEmoji: { fontSize: 28 },
+  allDoneTitle: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  allDoneSub: { fontSize: 12, lineHeight: 17 },
 
   // Daily Progress
   dailyProgress: {

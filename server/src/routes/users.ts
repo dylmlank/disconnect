@@ -211,11 +211,44 @@ router.get('/me/stats', authenticate, async (req: Request, res: Response) => {
     .count('* as count')
     .first();
 
+  // Daily engagement streak: consecutive days with a habit log OR check-in OR vibe
+  const engagementDays = await db.raw(`
+    SELECT DISTINCT active_date FROM (
+      SELECT DATE(created_at) as active_date FROM habit_logs
+        WHERE user_id = ? AND created_at > NOW() - INTERVAL '90 days'
+      UNION
+      SELECT check_in_date as active_date FROM check_ins
+        WHERE user_id = ? AND check_in_date > (CURRENT_DATE - INTERVAL '90 days')
+      UNION
+      SELECT DATE(created_at) as active_date FROM vibes
+        WHERE user_id = ? AND created_at > NOW() - INTERVAL '90 days'
+    ) combined
+    ORDER BY active_date DESC
+  `, [userId, userId, userId]);
+
+  let dailyStreak = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  let checkDate = new Date(today);
+  for (const row of engagementDays.rows) {
+    const rowDate = typeof row.active_date === 'string'
+      ? row.active_date.slice(0, 10)
+      : new Date(row.active_date).toISOString().slice(0, 10);
+    const checkStr = checkDate.toISOString().slice(0, 10);
+    if (rowDate === checkStr) {
+      dailyStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else if (rowDate < checkStr) {
+      // Missed a day — streak broken
+      break;
+    }
+  }
+
   res.json({
     stats: {
       eventsThisMonth: Number(monthlyResult?.count || 0),
       eventsAllTime: Number(allTimeResult?.count || 0),
       weeklyStreak: streak,
+      dailyStreak,
       beaconsDropped: Number(beaconsResult?.count || 0),
     },
   });
