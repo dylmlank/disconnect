@@ -3,7 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { setTokenProvider } from './services/api';
 import { setWsTokenProvider } from './hooks/useWebSocket';
 import { useAuthStore } from './store/authStore';
-import DevNavigator from './navigation/DevNavigator';
+import V3Navigator from './navigation/V3Navigator';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Dev mode: skip Clerk, auto-login as seed user "Alex"
@@ -35,7 +35,7 @@ export default function DevApp() {
 
   return (
     <ErrorBoundary>
-      <DevNavigator />
+      <V3Navigator />
     </ErrorBoundary>
   );
 }

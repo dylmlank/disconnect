@@ -1,106 +1,64 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useHabitStore } from '../../store/habitStore';
-import { useCheckInStore } from '../../store/checkinStore';
 import { useCircleStore } from '../../store/circleStore';
-import { useFocusStore } from '../../store/focusStore';
+import { useEventStore } from '../../store/eventStore';
+import { useBeaconStore } from '../../store/beaconStore';
 import { useAuthStore } from '../../store/authStore';
-import { useToastStore } from '../../store/toastStore';
-import { useThemeStore, themes } from '../../store/themeStore';
+import { useLocation } from '../../hooks/useLocation';
 import { useScreenTime } from '../../hooks/useScreenTime';
-import { CURATED_HABITS, getTodaysBite } from '@disconnect/shared';
-import { hapticTap, hapticSuccess } from '../../utils/haptics';
-import ProgressRing from '../../components/ProgressRing';
-import StreakBanner from '../../components/StreakBanner';
-import { HubSkeleton } from '../../components/Skeleton';
-import MeetupSuggestions from '../../components/MeetupSuggestions';
+import UserAvatar from '../../components/UserAvatar';
 import api from '../../services/api';
 
-const todaysBite = getTodaysBite();
-
-const VIBE_MAP: Record<string, { emoji: string; label: string; color: string }> = {
-  thriving:   { emoji: '🌊', label: 'thriving', color: '#4ade80' },
-  locked_in:  { emoji: '🎯', label: 'locked in', color: '#60a5fa' },
-  meh:        { emoji: '😶', label: 'meh', color: '#888' },
-  low_energy: { emoji: '🌧️', label: 'low energy', color: '#a78bfa' },
-  struggling: { emoji: '🥀', label: 'struggling', color: '#f87171' },
-};
-
-interface LevelInfo {
-  xp: number;
-  level: number;
-  levelName: string;
-  emoji: string;
-  progressPercent: number;
-}
-
-interface CircleActivity {
+interface QuickAction {
   id: string;
-  userName: string;
-  action: string;
-  timestamp: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  color: string;
+  bgColor: string;
+  onPress: () => void;
 }
 
 export default function HubScreen({ navigation }: { navigation: any }) {
-  const { habits, todayLogs, fetchHabits, logHabit } = useHabitStore();
-  const { today: todayCheckIn, fetchToday } = useCheckInStore();
-  const { circles, fetchCircles } = useCircleStore();
-  const { activeSessions, fetchActive } = useFocusStore();
   const user = useAuthStore((s) => s.user);
-  const showToast = useToastStore((s) => s.show);
-  const mode = useThemeStore((s) => s.mode);
-  const colors = themes[mode];
+  const { circles, fetchCircles } = useCircleStore();
+  const { events, fetchEvents } = useEventStore();
+  const { beacons, fetchBeacons } = useBeaconStore();
+  const location = useLocation();
   const { sessionSeconds } = useScreenTime();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
-  const [todayVibe, setTodayVibe] = useState<string | null>(null);
-  const [roomCount, setRoomCount] = useState(0);
-  const [levelInfo, setLevelInfo] = useState<LevelInfo | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [circleActivity, setCircleActivity] = useState<CircleActivity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showGrow, setShowGrow] = useState(false);
-  const [lastFocusAt, setLastFocusAt] = useState<string | null>(null);
-  const [showInlineVibe, setShowInlineVibe] = useState(false);
+  const [unreadCircleCount, setUnreadCircleCount] = useState(0);
+  const [upcomingEventCount, setUpcomingEventCount] = useState(0);
 
-  const loadData = useCallback(() => {
-    return Promise.all([
-      fetchHabits(),
-      fetchToday(),
-      fetchCircles(),
-      fetchActive(),
-      api.get('/vibes/today').then(({ data }) => {
-        if (data.vibe) setTodayVibe(data.vibe.vibe);
-      }).catch(() => {}),
-      api.get('/rooms').then(({ data }) => {
-        setRoomCount((data.rooms ?? []).length);
-      }).catch(() => {}),
-      api.get('/users/me/level').then(({ data }) => {
-        const l = data.level;
-        if (l?.current) {
-          setLevelInfo({
-            xp: l.xp,
-            level: l.current.level,
-            levelName: l.current.name,
-            emoji: l.current.emoji,
-            progressPercent: l.progressPercent,
-          });
-        }
-      }).catch(() => {}),
-      api.get('/users/me/stats').then(({ data }) => {
-        setStreak(data.stats?.dailyStreak ?? data.stats?.weeklyStreak ?? 0);
-      }).catch(() => {}),
-      api.get('/activity/circle').then(({ data }) => {
-        setCircleActivity((data.activities ?? []).slice(0, 3));
-      }).catch(() => setCircleActivity([])),
-      api.get('/focus/history', { params: { limit: 1 } }).then(({ data }) => {
-        const sessions = data.sessions ?? [];
-        if (sessions.length > 0) setLastFocusAt(sessions[0].startedAt);
-      }).catch(() => {}),
-    ]);
-  }, [fetchHabits, fetchToday, fetchCircles, fetchActive]);
+  const loadData = useCallback(async () => {
+    const promises: Promise<void>[] = [];
+
+    if (!location.loading && !location.error) {
+      promises.push(fetchEvents(location.latitude, location.longitude));
+      promises.push(fetchBeacons(location.latitude, location.longitude));
+    }
+    promises.push(fetchCircles());
+
+    await Promise.all(promises);
+
+    // Fetch unread counts
+    try {
+      const { data } = await api.get('/circles/unread');
+      setUnreadCircleCount(data.unread ?? 0);
+    } catch {}
+
+    // Count upcoming events (next 7 days)
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const upcoming = events.filter((e) => {
+      const start = new Date(e.startsAt);
+      return start >= now && start <= weekFromNow;
+    });
+    setUpcomingEventCount(upcoming.length);
+  }, [location.loading, location.error, fetchEvents, fetchBeacons, fetchCircles]);
 
   useEffect(() => {
     loadData().finally(() => setLoading(false));
@@ -112,21 +70,6 @@ export default function HubScreen({ navigation }: { navigation: any }) {
     setRefreshing(false);
   }, [loadData]);
 
-  const completedHabits = todayLogs.length;
-  const totalHabits = habits.length || 1;
-  const habitProgress = completedHabits / totalHabits;
-  const moodEmojis: Record<number, string> = { 1: '😞', 2: '😐', 3: '🙂', 4: '😊', 5: '🤩' };
-
-  const formatTimeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 1) return 'just now';
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days === 1) return 'yesterday';
-    return `${days}d ago`;
-  };
-
   const greeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -134,548 +77,298 @@ export default function HubScreen({ navigation }: { navigation: any }) {
     return 'Good evening';
   };
 
-  const handleQuickLog = async (habitId: string) => {
-    hapticTap();
-    await logHabit(habitId);
-    hapticSuccess();
-    showToast({ icon: '✅', title: 'Habit logged!', subtitle: '+10 XP', color: '#4ade80' });
+  const formatSessionTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    if (mins < 1) return 'Just opened';
+    if (mins === 1) return '1 minute in';
+    return `${mins} minutes in`;
   };
 
-  const handleInlineVibe = async (vibeId: string) => {
-    hapticTap();
-    setTodayVibe(vibeId);
-    setShowInlineVibe(false);
-    hapticSuccess();
-    showToast({ icon: VIBE_MAP[vibeId]?.emoji ?? '✨', title: 'Vibe set!', color: VIBE_MAP[vibeId]?.color });
-    try {
-      await api.post('/vibes', { vibe: vibeId });
-    } catch {
-      setTodayVibe(null); // revert on failure
-    }
-  };
-
-  // Calculate today's completion score
-  const dailyTasks = [
-    { done: completedHabits >= totalHabits && habits.length > 0, label: 'Habits' },
-    { done: !!todayCheckIn, label: 'Check-in' },
-    { done: !!todayVibe, label: 'Vibe' },
+  const quickActions: QuickAction[] = [
+    {
+      id: 'map',
+      icon: 'map',
+      label: 'View Map',
+      color: '#4ade80',
+      bgColor: '#0a2a0a',
+      onPress: () => navigation.navigate('HomeTab'),
+    },
+    {
+      id: 'event',
+      icon: 'add-circle',
+      label: 'Create Event',
+      color: '#f59e0b',
+      bgColor: '#2a1a0a',
+      onPress: () => navigation.navigate('HomeTab', { screen: 'CreateEvent' }),
+    },
+    {
+      id: 'beacon',
+      icon: 'radio-button-on',
+      label: 'Drop Beacon',
+      color: '#60a5fa',
+      bgColor: '#0a1a2a',
+      onPress: () => navigation.navigate('HomeTab', { screen: 'CreateBeacon' }),
+    },
+    {
+      id: 'circles',
+      icon: 'people',
+      label: 'Circles',
+      color: '#a78bfa',
+      bgColor: '#1a0a2a',
+      onPress: () => navigation.navigate('SocialTab'),
+    },
   ];
-  const dailyScore = dailyTasks.filter((t) => t.done).length;
+
+  const statsCards = [
+    {
+      label: 'Active Beacons',
+      value: beacons.length,
+      icon: 'radio-button-on' as const,
+      color: '#f59e0b',
+    },
+    {
+      label: 'Upcoming Events',
+      value: upcomingEventCount,
+      icon: 'calendar' as const,
+      color: '#4ade80',
+    },
+    { label: 'Your Circles', value: circles.length, icon: 'people' as const, color: '#a78bfa' },
+  ];
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.bg, paddingTop: insets.top + 12 }]}>
-        <HubSkeleton />
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.skeleton} />
+        </View>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.bg }]}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4ade80" />
+      }
     >
-      {/* ── Header ─────────────────────────────────────── */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.greeting, { color: colors.text }]}>
-            {greeting()}{user ? `, ${user.firstName}` : ''}
-          </Text>
-          {levelInfo && (
-            <Text style={[styles.levelLabel, { color: colors.textSecondary }]}>
-              {levelInfo.emoji} Lv.{levelInfo.level} · {levelInfo.xp} XP
-            </Text>
-          )}
-          {sessionSeconds > 30 && (
-            <Text style={[styles.sessionTimer, { color: sessionSeconds > 300 ? '#f87171' : colors.textMuted }]}>
-              {Math.floor(sessionSeconds / 60)}:{(sessionSeconds % 60).toString().padStart(2, '0')} in app
-            </Text>
-          )}
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.greeting}>{greeting()}</Text>
+            <Text style={styles.userName}>{user?.firstName || 'there'}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('ProfileTab')}
+          >
+            <UserAvatar firstName={user?.firstName || ''} photoUrl={user?.photoUrl} size={40} />
+          </TouchableOpacity>
         </View>
-        {levelInfo && (
-          <ProgressRing size={44} strokeWidth={3} progress={levelInfo.progressPercent / 100} color={colors.accent}>
-            <Text style={[styles.levelNum, { color: colors.accent }]}>{levelInfo.level}</Text>
-          </ProgressRing>
-        )}
+
+        {/* Session time nudge */}
+        <View style={styles.sessionCard}>
+          <Ionicons name="time-outline" size={18} color="#888" />
+          <Text style={styles.sessionText}>{formatSessionTime(sessionSeconds)}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('ProfileTab')}>
+            <Text style={styles.sessionAction}>Stay mindful</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {streak > 0 && <StreakBanner streak={streak} />}
-
-      {/* Streak at risk — shown when user has a streak but hasn't engaged today */}
-      {streak > 0 && dailyScore === 0 && (
-        <View style={[styles.streakWarning, { backgroundColor: mode === 'dark' ? '#2a1a0a' : '#fef3c7', borderColor: '#f59e0b' }]}>
-          <Text style={styles.streakWarningText}>
-            ⚡ Your {streak}-day streak is at risk! Do something today to keep it alive.
-          </Text>
-        </View>
-      )}
-
-      {/* ── Getting Started (shown when no habits yet) ── */}
-      {habits.length === 0 && !todayCheckIn && (
-        <View style={[styles.getStartedCard, { backgroundColor: colors.card, borderColor: colors.accent }]}>
-          <Text style={[styles.getStartedTitle, { color: colors.text }]}>Get started</Text>
-          <Text style={[styles.getStartedSub, { color: colors.textSecondary }]}>
-            Pick a few habits to track, set your vibe, and check in daily.
-          </Text>
-          <View style={styles.getStartedActions}>
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          {quickActions.map((action) => (
             <TouchableOpacity
-              style={[styles.getStartedBtn, { backgroundColor: colors.accent }]}
-              onPress={() => { hapticTap(); navigation.navigate('Habits'); }}
+              key={action.id}
+              style={[styles.actionCard, { backgroundColor: action.bgColor }]}
+              onPress={action.onPress}
             >
-              <Text style={styles.getStartedBtnText}>Add Habits</Text>
+              <View style={[styles.actionIconWrap, { backgroundColor: action.color + '20' }]}>
+                <Ionicons name={action.icon} size={24} color={action.color} />
+              </View>
+              <Text style={[styles.actionLabel, { color: action.color }]}>{action.label}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.getStartedBtnOutline, { borderColor: colors.cardBorder }]}
-              onPress={() => { hapticTap(); navigation.navigate('VibeCheck'); }}
-            >
-              <Text style={[styles.getStartedBtnOutlineText, { color: colors.text }]}>Set Vibe</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      )}
-
-      {/* ── Daily Progress Bar ──────────────────────────── */}
-      <View style={[styles.dailyProgress, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <View style={styles.dailyProgressHeader}>
-          <Text style={[styles.dailyProgressTitle, { color: colors.text }]}>Today</Text>
-          <Text style={[styles.dailyProgressScore, { color: colors.accent }]}>
-            {dailyScore}/3 complete
-          </Text>
-        </View>
-
-        {/* Quick action row — the 3 key daily actions */}
-        <View style={styles.dailyActions}>
-          <TouchableOpacity
-            style={[styles.dailyAction, todayVibe && styles.dailyActionDone]}
-            onPress={() => {
-              hapticTap();
-              if (todayVibe) {
-                navigation.navigate('VibeCheck');
-              } else {
-                setShowInlineVibe(!showInlineVibe);
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dailyActionEmoji}>{todayVibe ? (VIBE_MAP[todayVibe]?.emoji ?? '✨') : '✨'}</Text>
-            <Text style={[styles.dailyActionLabel, { color: todayVibe ? colors.accent : colors.textMuted }]}>
-              {todayVibe ? VIBE_MAP[todayVibe]?.label : 'Set vibe'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.dailyAction, todayCheckIn && styles.dailyActionDone]}
-            onPress={() => { hapticTap(); navigation.navigate('CheckIn'); }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dailyActionEmoji}>{todayCheckIn ? moodEmojis[todayCheckIn.mood] : '💚'}</Text>
-            <Text style={[styles.dailyActionLabel, { color: todayCheckIn ? colors.accent : colors.textMuted }]}>
-              {todayCheckIn ? 'Done' : 'Check in'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.dailyAction, (completedHabits >= totalHabits && habits.length > 0) && styles.dailyActionDone]}
-            onPress={() => { hapticTap(); navigation.navigate('Habits'); }}
-            activeOpacity={0.7}
-          >
-            <ProgressRing size={28} strokeWidth={2.5} progress={habitProgress} color={colors.accent}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{completedHabits}</Text>
-            </ProgressRing>
-            <Text style={[styles.dailyActionLabel, { color: completedHabits >= totalHabits && habits.length > 0 ? colors.accent : colors.textMuted }]}>
-              Habits
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Inline vibe picker */}
-        {showInlineVibe && !todayVibe && (
-          <View style={[styles.inlineVibeRow, { borderTopColor: colors.cardBorder }]}>
-            {Object.entries(VIBE_MAP).map(([id, v]) => (
-              <TouchableOpacity
-                key={id}
-                style={styles.inlineVibeBtn}
-                onPress={() => handleInlineVibe(id)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.inlineVibeEmoji}>{v.emoji}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Quick-log habit dots */}
-        {habits.length > 0 && completedHabits < totalHabits && (
-          <View style={[styles.habitDots, { borderTopColor: colors.cardBorder }]}>
-            {habits.map((h) => {
-              const logged = todayLogs.some((l) => l.habitId === h.habitId);
-              const def = CURATED_HABITS.find((c) => c.id === h.habitId);
-              return (
-                <TouchableOpacity
-                  key={h.id}
-                  style={[styles.habitDot, { backgroundColor: colors.inputBg }, logged && { backgroundColor: colors.accentBg, borderWidth: 1, borderColor: colors.accent }]}
-                  onPress={() => !logged && handleQuickLog(h.habitId)}
-                  disabled={logged}
-                >
-                  <Text style={styles.habitEmoji}>{def?.emoji || '⭐'}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
       </View>
 
-      {/* ── All Done Celebration ─────────────────────────── */}
-      {dailyScore === 3 && habits.length > 0 && (
-        <View style={[styles.allDoneCard, { backgroundColor: mode === 'dark' ? '#0d1a0d' : '#dcfce7', borderColor: colors.accent }]}>
-          <Text style={styles.allDoneEmoji}>🎉</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.allDoneTitle, { color: colors.accent }]}>All done for today!</Text>
-            <Text style={[styles.allDoneSub, { color: colors.textSecondary }]}>
-              You've checked in, set your vibe, and logged your habits. Now go live.
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* ── Focus (highlighted if active) ──────────────── */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-        onPress={() => { hapticTap(); navigation.navigate('Focus'); }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardRow}>
-          <View style={[styles.iconBubble, { backgroundColor: mode === 'dark' ? '#0a1a3a' : '#dbeafe' }]}>
-            <Ionicons name={activeSessions.length > 0 ? 'timer' : 'timer-outline'} size={22} color="#60a5fa" />
-          </View>
-          <View style={styles.cardInfo}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Focus</Text>
-            <Text style={[styles.cardSub, { color: activeSessions.length > 0 ? '#60a5fa' : colors.textMuted }]}>
-              {activeSessions.length > 0
-                ? `${activeSessions.length} ${activeSessions.length === 1 ? 'person' : 'people'} focusing now`
-                : lastFocusAt
-                  ? `Last session ${formatTimeAgo(lastFocusAt)}`
-                  : 'Start a focus session'}
-            </Text>
-          </View>
-          {activeSessions.length > 0 && <View style={styles.liveDot} />}
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </View>
-      </TouchableOpacity>
-
-      {/* ── Connect ──────────────────────────────────────── */}
-      <Text style={[styles.groupTitle, { color: colors.textMuted }]}>Connect</Text>
-
-      {/* Circle Activity (compact) */}
-      {circleActivity.length > 0 && (
-        <View style={[styles.activityCard, { backgroundColor: colors.bgSecondary, borderColor: colors.cardBorder }]}>
-          {circleActivity.map((item) => (
-            <View key={item.id} style={styles.activityRow}>
-              <Text style={[styles.activityDot, { color: colors.accent }]}>•</Text>
-              <Text style={[styles.activityText, { color: colors.textSecondary }]}>
-                <Text style={[styles.activityName, { color: colors.text }]}>{item.userName}</Text> {item.action}
-              </Text>
+      {/* Stats Overview */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your Activity</Text>
+        <View style={styles.statsRow}>
+          {statsCards.map((stat, i) => (
+            <View key={i} style={styles.statCard}>
+              <Ionicons name={stat.icon} size={20} color={stat.color} />
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Circle Activity */}
+      {circles.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Your Circles</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SocialTab')}>
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {circles.slice(0, 3).map((circle) => (
+            <TouchableOpacity
+              key={circle.id}
+              style={styles.circleRow}
+              onPress={() =>
+                navigation.navigate('SocialTab', {
+                  screen: 'CircleDetail',
+                  params: { circleId: circle.id },
+                })
+              }
+            >
+              <View style={styles.circleIcon}>
+                <Text style={styles.circleEmoji}>👥</Text>
+              </View>
+              <View style={styles.circleInfo}>
+                <Text style={styles.circleName}>{circle.name}</Text>
+                <Text style={styles.circleMembers}>{circle.memberCount} members</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#333" />
+            </TouchableOpacity>
           ))}
         </View>
       )}
 
-      <View style={styles.cardPair}>
-        <TouchableOpacity
-          style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => { hapticTap(); navigation.getParent()?.navigate('SocialTab'); }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="people-outline" size={24} color={colors.accent} />
-          <Text style={[styles.halfCardTitle, { color: colors.text }]}>Circles</Text>
-          {circles.length > 0 && (
-            <Text style={[styles.halfCardBadge, { color: colors.accent }]}>{circles.length} active</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.halfCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => { hapticTap(); navigation.getParent()?.navigate('SocialTab', { screen: 'Discover' }); }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="compass-outline" size={24} color="#f59e0b" />
-          <Text style={[styles.halfCardTitle, { color: colors.text }]}>Discover</Text>
-          <Text style={[styles.halfCardBadge, { color: colors.textMuted }]}>Nearby</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Grow (collapsible) ───────────────────────────── */}
-      <TouchableOpacity
-        style={styles.groupHeader}
-        onPress={() => { hapticTap(); setShowGrow(!showGrow); }}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.groupTitle, { color: colors.textMuted, marginBottom: 0 }]}>Grow</Text>
-        <Ionicons name={showGrow ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
-      </TouchableOpacity>
-
-      {showGrow && (
-        <View style={styles.growSection}>
-          <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} onPress={() => { hapticTap(); navigation.navigate('Challenges'); }} activeOpacity={0.7}>
-            <View style={styles.cardRow}>
-              <View style={[styles.iconBubble, { backgroundColor: mode === 'dark' ? '#2a1a0a' : '#fef3c7' }]}>
-                <Ionicons name="trophy-outline" size={22} color="#f59e0b" />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Challenges</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>Join or create a challenge</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} onPress={() => { hapticTap(); navigation.navigate('StudyRooms'); }} activeOpacity={0.7}>
-            <View style={styles.cardRow}>
-              <View style={[styles.iconBubble, { backgroundColor: mode === 'dark' ? '#0a1a1a' : '#ccfbf1' }]}>
-                <Ionicons name="book-outline" size={22} color="#2dd4bf" />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Study Rooms</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                  {roomCount > 0 ? `${roomCount} active` : 'Focus with others'}
-                </Text>
-              </View>
-              {roomCount > 0 && <View style={styles.liveDot} />}
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} onPress={() => { hapticTap(); navigation.navigate('WalkTalk'); }} activeOpacity={0.7}>
-            <View style={styles.cardRow}>
-              <View style={[styles.iconBubble, { backgroundColor: mode === 'dark' ? '#1a1a0a' : '#fef9c3' }]}>
-                <Ionicons name="walk-outline" size={22} color="#f59e0b" />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Walk & Talk</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>Walk together</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} onPress={() => { hapticTap(); navigation.navigate('PhotoFeed'); }} activeOpacity={0.7}>
-            <View style={styles.cardRow}>
-              <View style={[styles.iconBubble, { backgroundColor: mode === 'dark' ? '#1a0a2a' : '#ede9fe' }]}>
-                <Ionicons name="images-outline" size={22} color="#a78bfa" />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Photos</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>Proof shots</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* ── Suggestion ────────────────────────────────────── */}
-      {dailyScore < 3 && (
-        <TouchableOpacity
-          style={[styles.suggestionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => {
-            hapticTap();
-            if (!todayVibe) navigation.navigate('VibeCheck');
-            else if (!todayCheckIn) navigation.navigate('CheckIn');
-            else if (completedHabits < totalHabits) navigation.navigate('Habits');
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.suggestionEmoji}>
-            {!todayVibe ? '✨' : !todayCheckIn ? '💚' : '🌿'}
+      {/* Nearby Activity */}
+      {beacons.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Active Nearby</Text>
+          <Text style={styles.nearbyCount}>
+            {beacons.length} beacon{beacons.length !== 1 ? 's' : ''} nearby
           </Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.suggestionTitle, { color: colors.text }]}>
-              {!todayVibe ? 'Set your vibe' : !todayCheckIn ? 'Check in' : 'Log a habit'}
-            </Text>
-            <Text style={[styles.suggestionSub, { color: colors.textMuted }]}>
-              {!todayVibe ? 'Takes 2 seconds — how are you today?' :
-               !todayCheckIn ? 'One good thing + your mood' :
-               `${totalHabits - completedHabits} remaining`}
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward-circle" size={24} color={colors.accent} />
-        </TouchableOpacity>
-      )}
-
-      {/* ── Meetup Suggestions ─────────────────────────── */}
-      <MeetupSuggestions
-        onTapUser={(userId) => navigation.navigate('UserProfile', { userId })}
-        onCreateEvent={(s) => navigation.navigate('CreateEvent', { prefillTitle: `${s.emoji} ${s.reason.split('—')[0].trim()}` })}
-      />
-
-      {/* ── Science Bite ─────────────────────────────────── */}
-      <View style={[styles.scienceBite, { backgroundColor: colors.bgSecondary, borderColor: colors.cardBorder }]}>
-        <Text style={styles.scienceEmoji}>{todaysBite.emoji}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.scienceFact, { color: colors.textSecondary }]}>{todaysBite.fact}</Text>
-          <View style={styles.scienceFooter}>
-            <Text style={[styles.scienceCitation, { color: colors.textMuted }]}>— {todaysBite.citation}</Text>
-            <TouchableOpacity
-              onPress={() => Share.share({ message: `${todaysBite.fact} (${todaysBite.citation}) — via Disconnect` })}
-              style={styles.scienceShare}
-            >
-              <Ionicons name="share-outline" size={13} color={colors.accent} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.viewMapButton}
+            onPress={() => navigation.navigate('HomeTab')}
+          >
+            <Ionicons name="map" size={18} color="#4ade80" />
+            <Text style={styles.viewMapText}>View on Map</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 48 },
-  loadingContainer: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
 
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  headerLeft: { flex: 1 },
-  greeting: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
-  levelLabel: { fontSize: 13, fontWeight: '500' },
-  levelNum: { fontSize: 14, fontWeight: '800' },
-  sessionTimer: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+  header: { paddingHorizontal: 20, paddingBottom: 16 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerLeft: { gap: 2 },
+  greeting: { fontSize: 14, color: '#666' },
+  userName: { fontSize: 26, fontWeight: '800', color: '#fff' },
+  profileButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
 
-  // Get Started
-  getStartedCard: {
-    borderRadius: 16, padding: 20, marginBottom: 16, marginTop: 8,
-    borderWidth: 1.5,
-  },
-  getStartedTitle: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
-  getStartedSub: { fontSize: 14, lineHeight: 20, marginBottom: 16 },
-  getStartedActions: { flexDirection: 'row', gap: 10 },
-  getStartedBtn: {
-    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
-  },
-  getStartedBtnText: { fontSize: 14, fontWeight: '700', color: '#0a0a0a' },
-  getStartedBtnOutline: {
-    paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
+  // Session card
+  sessionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#111',
+    borderRadius: 12,
     borderWidth: 1,
+    borderColor: '#1a1a1a',
   },
-  getStartedBtnOutlineText: { fontSize: 14, fontWeight: '600' },
+  sessionText: { fontSize: 14, color: '#888', flex: 1 },
+  sessionAction: { fontSize: 13, color: '#4ade80', fontWeight: '600' },
 
-  // Streak warning
-  streakWarning: {
-    borderRadius: 12, padding: 12, marginTop: 10, marginBottom: 4,
+  // Sections
+  section: { paddingHorizontal: 20, marginTop: 24 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#555',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  seeAll: { fontSize: 13, color: '#4ade80', fontWeight: '600' },
+
+  // Quick actions
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  actionCard: { width: '48%', padding: 16, borderRadius: 16, alignItems: 'center', gap: 10 },
+  actionIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionLabel: { fontSize: 14, fontWeight: '700' },
+
+  // Stats
+  statsRow: { flexDirection: 'row', gap: 10 },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#111',
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
     borderWidth: 1,
+    borderColor: '#1a1a1a',
   },
-  streakWarningText: { fontSize: 13, fontWeight: '600', color: '#f59e0b', textAlign: 'center' },
+  statValue: { fontSize: 24, fontWeight: '800', color: '#fff', marginTop: 6 },
+  statLabel: { fontSize: 11, color: '#555', marginTop: 2 },
 
-  // All done
-  allDoneCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 14, padding: 16, marginBottom: 12,
+  // Circles
+  circleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  circleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circleEmoji: { fontSize: 18 },
+  circleInfo: { flex: 1, marginLeft: 12 },
+  circleName: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  circleMembers: { fontSize: 12, color: '#555', marginTop: 1 },
+
+  // Nearby
+  nearbyCount: { fontSize: 14, color: '#888', marginBottom: 12 },
+  viewMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#0a2a0a',
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
+    borderColor: '#4ade80' + '40',
   },
-  allDoneEmoji: { fontSize: 28 },
-  allDoneTitle: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
-  allDoneSub: { fontSize: 12, lineHeight: 17 },
+  viewMapText: { fontSize: 14, fontWeight: '600', color: '#4ade80' },
 
-  // Daily Progress
-  dailyProgress: {
-    borderRadius: 16, padding: 16, marginBottom: 12, marginTop: 8,
-    borderWidth: 1,
-  },
-  dailyProgressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  dailyProgressTitle: { fontSize: 16, fontWeight: '700' },
-  dailyProgressScore: { fontSize: 13, fontWeight: '600' },
-
-  dailyActions: { flexDirection: 'row', justifyContent: 'space-around', gap: 12 },
-  dailyAction: {
-    flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12,
-    borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  dailyActionDone: { backgroundColor: 'rgba(74, 222, 128, 0.06)' },
-  dailyActionEmoji: { fontSize: 22 },
-  dailyActionLabel: { fontSize: 11, fontWeight: '600' },
-
-  // Inline vibe picker
-  inlineVibeRow: {
-    flexDirection: 'row', justifyContent: 'space-around', marginTop: 14, paddingTop: 14,
-    borderTopWidth: 1,
-  },
-  inlineVibeBtn: { padding: 8 },
-  inlineVibeEmoji: { fontSize: 26 },
-
-  // Habit dots
-  habitDots: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 14, paddingTop: 14, borderTopWidth: 1 },
-  habitDot: {
-    width: 38, height: 38, borderRadius: 19,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  habitEmoji: { fontSize: 16 },
-
-  // Cards
-  card: {
-    borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '700' },
-  cardSub: { fontSize: 13, marginTop: 2 },
-  iconBubble: {
-    width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
-  },
-  liveDot: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#60a5fa',
-    shadowColor: '#60a5fa', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4,
-  },
-
-  // Card pair (side-by-side)
-  cardPair: { flexDirection: 'row', gap: 10, marginBottom: 10 },
-  halfCard: {
-    flex: 1, borderRadius: 14, padding: 16, alignItems: 'center', gap: 8,
-    borderWidth: 1,
-  },
-  halfCardTitle: { fontSize: 14, fontWeight: '700' },
-  halfCardBadge: { fontSize: 12, fontWeight: '500' },
-
-  // Group titles
-  groupTitle: {
-    fontSize: 12, fontWeight: '700', letterSpacing: 0.8,
-    textTransform: 'uppercase', marginBottom: 10, marginTop: 14,
-  },
-  groupHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, marginTop: 6,
-  },
-  growSection: {},
-
-  // Circle Activity
-  activityCard: {
-    borderRadius: 12, padding: 12, marginBottom: 10,
-    borderWidth: 1,
-  },
-  activityRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-  activityDot: { fontSize: 14 },
-  activityText: { fontSize: 13, flex: 1 },
-  activityName: { fontWeight: '600' },
-
-  // Suggestion card
-  suggestionCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 14, padding: 16, marginTop: 16, marginBottom: 4,
-    borderWidth: 1,
-  },
-  suggestionEmoji: { fontSize: 24 },
-  suggestionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
-  suggestionSub: { fontSize: 12 },
-
-  // Science bite
-  scienceBite: {
-    flexDirection: 'row', gap: 10, padding: 14, borderRadius: 12,
-    borderWidth: 1, marginTop: 16,
-  },
-  scienceEmoji: { fontSize: 20 },
-  scienceFact: { fontSize: 12, lineHeight: 18 },
-  scienceFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  scienceCitation: { fontSize: 10, fontStyle: 'italic', flex: 1 },
-  scienceShare: { padding: 4 },
+  // Skeleton
+  skeleton: { width: 200, height: 30, borderRadius: 8, backgroundColor: '#1a1a1a' },
 });

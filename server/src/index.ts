@@ -36,6 +36,9 @@ import roomRoutes from './routes/rooms';
 import feedRoutes from './routes/feed';
 import nudgeRoutes from './routes/nudges';
 import suggestionRoutes from './routes/suggestions';
+import learningRoutes from './routes/learning';
+import learningDiscoveryRoutes from './routes/learningDiscovery';
+import v3Routes from './routes/v3';
 
 const app = express();
 const server = createServer(app);
@@ -56,7 +59,9 @@ app.get('/api/health', async (_req, res) => {
     await db.raw('SELECT 1');
     res.json({ status: 'ok', timestamp: new Date().toISOString(), db: 'connected' });
   } catch {
-    res.status(503).json({ status: 'degraded', timestamp: new Date().toISOString(), db: 'disconnected' });
+    res
+      .status(503)
+      .json({ status: 'degraded', timestamp: new Date().toISOString(), db: 'disconnected' });
   }
 });
 
@@ -82,6 +87,12 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/nudges', nudgeRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/learning', learningRoutes);
+// Mount under /learning to avoid colliding with existing geo-based /api/discover/people
+app.use('/api/discover/learning', learningDiscoveryRoutes);
+
+// v3 API
+app.use('/api/v3', v3Routes);
 
 app.use(errorHandler);
 

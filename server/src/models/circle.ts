@@ -5,11 +5,23 @@ function generateInviteCode(): string {
   return crypto.randomBytes(4).toString('hex'); // 8 hex chars
 }
 
-export async function createCircle(creatorId: string, name: string) {
-  // Check max 3 circles per user
-  const memberCount = await db('circle_members').where('user_id', creatorId).count('* as count').first();
-  if (memberCount && Number(memberCount.count) >= 3) {
-    return { error: 'max_circles', message: 'You can only be in 3 circles at a time' };
+export async function createCircle(params: {
+  creatorId: string;
+  name: string;
+  description?: string;
+  skillIds?: string[];
+  isPublic?: boolean;
+  maxMembers?: number;
+}) {
+  const { creatorId, name, description, skillIds, isPublic = true, maxMembers = 50 } = params;
+
+  // Check max circles per user (increased from 3 to 10 for learning focus)
+  const memberCount = await db('circle_members')
+    .where('user_id', creatorId)
+    .count('* as count')
+    .first();
+  if (memberCount && Number(memberCount.count) >= 10) {
+    return { error: 'max_circles', message: 'You can only be in 10 circles at a time' };
   }
 
   const inviteCode = generateInviteCode();
@@ -17,22 +29,38 @@ export async function createCircle(creatorId: string, name: string) {
   const [circle] = await db('circles')
     .insert({
       name,
+      description: description ?? null,
       creator_id: creatorId,
       invite_code: inviteCode,
+      is_public: isPublic,
+      max_members: maxMembers,
     })
     .returning('*');
 
   // Auto-add creator as member
   await db('circle_members').insert({ circle_id: circle.id, user_id: creatorId });
 
+  // Add skills if provided
+  if (skillIds && skillIds.length > 0) {
+    await db('circle_skills').insert(
+      skillIds.map((skillId) => ({
+        circle_id: circle.id,
+        skill_id: skillId,
+      })),
+    );
+  }
+
   return { circle: toCircle(circle) };
 }
 
 export async function joinCircle(userId: string, inviteCode: string) {
-  // Check max 3 circles per user
-  const memberCount = await db('circle_members').where('user_id', userId).count('* as count').first();
-  if (memberCount && Number(memberCount.count) >= 3) {
-    return { error: 'max_circles', message: 'You can only be in 3 circles at a time' };
+  // Check max circles per user
+  const memberCount = await db('circle_members')
+    .where('user_id', userId)
+    .count('* as count')
+    .first();
+  if (memberCount && Number(memberCount.count) >= 10) {
+    return { error: 'max_circles', message: 'You can only be in 10 circles at a time' };
   }
 
   const circle = await db('circles').where('invite_code', inviteCode).first();
@@ -40,14 +68,20 @@ export async function joinCircle(userId: string, inviteCode: string) {
     return { error: 'not_found', message: 'Invalid invite code' };
   }
 
-  // Check max 8 members
-  const currentMembers = await db('circle_members').where('circle_id', circle.id).count('* as count').first();
-  if (currentMembers && Number(currentMembers.count) >= 8) {
-    return { error: 'full', message: 'This circle is full (max 8 members)' };
+  // Check max members (configurable per circle)
+  const maxMembers = circle.max_members || 50;
+  const currentMembers = await db('circle_members')
+    .where('circle_id', circle.id)
+    .count('* as count')
+    .first();
+  if (currentMembers && Number(currentMembers.count) >= maxMembers) {
+    return { error: 'full', message: `This circle is full (max ${maxMembers} members)` };
   }
 
   // Check not already a member
-  const existing = await db('circle_members').where({ circle_id: circle.id, user_id: userId }).first();
+  const existing = await db('circle_members')
+    .where({ circle_id: circle.id, user_id: userId })
+    .first();
   if (existing) {
     return { error: 'already_member', message: 'You are already in this circle' };
   }
@@ -87,7 +121,9 @@ export async function getUserCircles(userId: string) {
     .where('circle_members.user_id', userId)
     .select(
       'circles.*',
-      db.raw(`(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = circles.id)::int as member_count`),
+      db.raw(
+        `(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = circles.id)::int as member_count`,
+      ),
     );
 
   return rows.map(toCircle);
@@ -98,20 +134,29 @@ export async function getCircleDetail(circleId: string, userId: string) {
     .where('circles.id', circleId)
     .select(
       'circles.*',
-      db.raw(`(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = circles.id)::int as member_count`),
+      db.raw(
+        `(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = circles.id)::int as member_count`,
+      ),
     )
     .first();
 
   if (!circle) return null;
 
   // Verify user is a member
-  const isMember = await db('circle_members').where({ circle_id: circleId, user_id: userId }).first();
+  const isMember = await db('circle_members')
+    .where({ circle_id: circleId, user_id: userId })
+    .first();
   if (!isMember) return null;
 
   const members = await db('circle_members')
     .join('users', 'circle_members.user_id', 'users.id')
     .where('circle_members.circle_id', circleId)
-    .select('users.id as user_id', 'users.first_name', 'users.photo_url', 'circle_members.joined_at');
+    .select(
+      'users.id as user_id',
+      'users.first_name',
+      'users.photo_url',
+      'circle_members.joined_at',
+    );
 
   return {
     ...toCircle(circle),
@@ -126,7 +171,9 @@ export async function getCircleDetail(circleId: string, userId: string) {
 
 export async function getCircleFeed(circleId: string, userId: string, since?: string) {
   // Verify membership
-  const isMember = await db('circle_members').where({ circle_id: circleId, user_id: userId }).first();
+  const isMember = await db('circle_members')
+    .where({ circle_id: circleId, user_id: userId })
+    .first();
   if (!isMember) return null;
 
   const sinceDate = since ? new Date(since) : new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -142,7 +189,14 @@ export async function getCircleFeed(circleId: string, userId: string, since?: st
     .join('users', 'habit_logs.user_id', 'users.id')
     .whereIn('habit_logs.user_id', memberIds)
     .where('habit_logs.logged_at', '>=', sinceDate)
-    .select('habit_logs.id', 'habit_logs.user_id', 'users.first_name', 'users.photo_url', 'habit_logs.habit_id', 'habit_logs.logged_at')
+    .select(
+      'habit_logs.id',
+      'habit_logs.user_id',
+      'users.first_name',
+      'users.photo_url',
+      'habit_logs.habit_id',
+      'habit_logs.logged_at',
+    )
     .orderBy('habit_logs.logged_at', 'desc')
     .limit(15);
 
@@ -150,7 +204,14 @@ export async function getCircleFeed(circleId: string, userId: string, since?: st
     .join('users', 'check_ins.user_id', 'users.id')
     .whereIn('check_ins.user_id', memberIds)
     .where('check_ins.created_at', '>=', sinceDate)
-    .select('check_ins.id', 'check_ins.user_id', 'users.first_name', 'users.photo_url', 'check_ins.mood', 'check_ins.created_at')
+    .select(
+      'check_ins.id',
+      'check_ins.user_id',
+      'users.first_name',
+      'users.photo_url',
+      'check_ins.mood',
+      'check_ins.created_at',
+    )
     .orderBy('check_ins.created_at', 'desc')
     .limit(10);
 
@@ -159,7 +220,15 @@ export async function getCircleFeed(circleId: string, userId: string, since?: st
     .whereIn('focus_sessions.user_id', memberIds)
     .where('focus_sessions.created_at', '>=', sinceDate)
     .where('focus_sessions.completed', true)
-    .select('focus_sessions.id', 'focus_sessions.user_id', 'users.first_name', 'users.photo_url', 'focus_sessions.duration_minutes', 'focus_sessions.intention', 'focus_sessions.created_at')
+    .select(
+      'focus_sessions.id',
+      'focus_sessions.user_id',
+      'users.first_name',
+      'users.photo_url',
+      'focus_sessions.duration_minutes',
+      'focus_sessions.intention',
+      'focus_sessions.created_at',
+    )
     .orderBy('focus_sessions.created_at', 'desc')
     .limit(10);
 
@@ -169,7 +238,15 @@ export async function getCircleFeed(circleId: string, userId: string, since?: st
     .whereIn('challenge_logs.user_id', memberIds)
     .where('challenge_logs.logged_at', '>=', sinceDate)
     .where('challenges.circle_id', circleId)
-    .select('challenge_logs.id', 'challenge_logs.user_id', 'users.first_name', 'users.photo_url', 'challenges.title as challenge_title', 'challenge_logs.day_number', 'challenge_logs.logged_at')
+    .select(
+      'challenge_logs.id',
+      'challenge_logs.user_id',
+      'users.first_name',
+      'users.photo_url',
+      'challenges.title as challenge_title',
+      'challenge_logs.day_number',
+      'challenge_logs.logged_at',
+    )
     .orderBy('challenge_logs.logged_at', 'desc')
     .limit(10);
 
@@ -228,12 +305,65 @@ export async function getCircleFeed(circleId: string, userId: string, since?: st
   return feed.slice(0, 50);
 }
 
+export async function discoverCirclesBySkill(params: {
+  userId: string;
+  skillId: string;
+  limit?: number;
+}) {
+  const { userId, skillId, limit = 20 } = params;
+
+  // Find public circles with this skill, that user is not already a member of
+  const circles = await db('circles as c')
+    .join('circle_skills as cs', 'c.id', 'cs.circle_id')
+    .where('cs.skill_id', skillId)
+    .where('c.is_public', true)
+    .whereNotIn('c.id', function (this: any) {
+      this.select('circle_id').from('circle_members').where('user_id', userId);
+    })
+    .select(
+      'c.*',
+      db.raw(
+        `(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = c.id)::int as member_count`,
+      ),
+    )
+    .orderBy('member_count', 'desc')
+    .limit(limit);
+
+  return circles.map(toCircle);
+}
+
+export async function searchCircles(params: { userId: string; query: string; limit?: number }) {
+  const { userId, query, limit = 20 } = params;
+
+  const circles = await db('circles as c')
+    .where('c.is_public', true)
+    .where((qb) => {
+      qb.whereILike('c.name', `%${query}%`).orWhereILike('c.description', `%${query}%`);
+    })
+    .whereNotIn('c.id', function (this: any) {
+      this.select('circle_id').from('circle_members').where('user_id', userId);
+    })
+    .select(
+      'c.*',
+      db.raw(
+        `(SELECT COUNT(*) FROM circle_members WHERE circle_members.circle_id = c.id)::int as member_count`,
+      ),
+    )
+    .orderBy('member_count', 'desc')
+    .limit(limit);
+
+  return circles.map(toCircle);
+}
+
 function toCircle(row: any) {
   return {
     id: row.id,
     name: row.name,
+    description: row.description ?? null,
     creatorId: row.creator_id,
     inviteCode: row.invite_code,
+    isPublic: row.is_public ?? true,
+    maxMembers: row.max_members || 50,
     memberCount: row.member_count || 0,
     createdAt: row.created_at.toISOString(),
   };

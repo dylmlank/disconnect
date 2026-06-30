@@ -277,7 +277,13 @@ export interface CheckIn {
 
 // ─── Reactions ──────────────────────────────────────────────
 
-export type ReactionTargetType = 'habit_log' | 'check_in' | 'challenge_log' | 'focus_session';
+export type ReactionTargetType =
+  | 'habit_log'
+  | 'check_in'
+  | 'challenge_log'
+  | 'focus_session'
+  | 'learning_post'
+  | 'resource';
 
 export interface Reaction {
   id: string;
@@ -292,4 +298,185 @@ export interface ReactionSummary {
   emoji: string;
   count: number;
   userReacted: boolean;
+}
+
+// ─── Skills & Learning ──────────────────────────────────────
+
+export type SkillLevel = 'learning' | 'practicing' | 'teaching';
+
+export interface Skill {
+  id: string;
+  name: string;
+  category: SkillCategory;
+  description: string | null;
+  aliases: string[]; // alternative names for matching
+  relatedSkillIds: string[];
+}
+
+export type SkillCategory =
+  | 'programming'
+  | 'design'
+  | 'music'
+  | 'languages'
+  | 'crafts'
+  | 'sports'
+  | 'cooking'
+  | 'science'
+  | 'business'
+  | 'art'
+  | 'writing'
+  | 'other';
+
+export interface UserSkill {
+  skillId: string;
+  level: SkillLevel;
+  visibility: 'public' | 'circles' | 'private';
+  notes: string | null; // "3 years experience", "looking for study buddies"
+  addedAt: string;
+}
+
+export interface UserSkillDetail extends UserSkill {
+  skill: Skill;
+}
+
+// ─── Learning Posts ─────────────────────────────────────────
+
+export type LearningPostType = 'learned' | 'practicing' | 'question' | 'building';
+
+export interface LearningPost {
+  id: string;
+  authorId: string;
+  postType: LearningPostType;
+  title: string;
+  content: string | null;
+  skillIds: string[];
+  resourceUrl: string | null; // optional link
+  resourceTitle: string | null;
+  isAiAssisted: boolean; // user self-reported
+  aiDetectionScore: number | null; // 0-1 confidence from detection service
+  aiDetectionFlags: string[]; // "pattern:gpt", "metadata:ai-generated"
+  isPublic: boolean;
+  circleIds: string[]; // which circles can see if not public
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LearningPostWithAuthor extends LearningPost {
+  author: UserProfile;
+  skills: Skill[];
+  reactionSummary: ReactionSummary[];
+  commentCount: number;
+}
+
+export interface LearningPostDetail extends LearningPostWithAuthor {
+  comments: LearningPostComment[];
+}
+
+export interface LearningPostComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  author: UserProfile;
+  content: string;
+  isAiAssisted: boolean;
+  createdAt: string;
+}
+
+// ─── Resources ──────────────────────────────────────────────
+
+export type ResourceType = 'article' | 'book' | 'course' | 'video' | 'tool' | 'other';
+
+export interface Resource {
+  id: string;
+  uploaderId: string;
+  title: string;
+  description: string | null;
+  url: string;
+  resourceType: ResourceType;
+  skillIds: string[];
+  cost: 'free' | 'paid' | 'freemium';
+  upvotes: number;
+  downvotes: number;
+  createdAt: string;
+}
+
+export interface ResourceWithUploader extends Resource {
+  uploader: UserProfile;
+  skills: Skill[];
+  userVote: 'up' | 'down' | null;
+}
+
+export interface ResourceComment {
+  id: string;
+  resourceId: string;
+  authorId: string;
+  author: UserProfile;
+  content: string;
+  createdAt: string;
+}
+
+// ─── AI Content Detection ───────────────────────────────────
+
+export interface AIContentFlag {
+  id: string;
+  targetType: 'post' | 'comment' | 'resource';
+  targetId: string;
+  detectionMethod: 'user_reported' | 'auto_pattern' | 'auto_api';
+  confidence: number; // 0-1
+  flags: string[];
+  detectedAt: string;
+}
+
+// ─── Connection Requests ─────────────────────────────────────
+
+export type ConnectionContext = 'skill' | 'circle' | 'event' | 'resource';
+
+export interface ConnectionRequest {
+  id: string;
+  requesterId: string;
+  targetId: string;
+  contextType: ConnectionContext;
+  contextId: string | null; // skill id, circle id, event id, or resource id
+  message: string | null; // optional intro message
+  status: 'pending' | 'accepted' | 'declined' | 'ignored';
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export interface ConnectionRequestDetail extends ConnectionRequest {
+  requester: UserProfile;
+  contextDetail?: Skill | Circle | Event | Resource; // populated based on contextType
+}
+
+// ─── Updated Circle (skill-based) ───────────────────────────
+
+export interface LearningCircle {
+  id: string;
+  name: string;
+  description: string | null;
+  creatorId: string;
+  skillIds: string[]; // primary skills this circle focuses on
+  inviteCode: string;
+  isPublic: boolean; // discoverable or invite-only
+  maxMembers: number; // cap for depth
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface LearningCircleDetail extends LearningCircle {
+  members: CircleMember[];
+  skills: Skill[];
+  recentPosts: LearningPostWithAuthor[];
+  resources: Resource[];
+}
+
+// ─── Updated Event (with learning context) ───────────────────
+
+export interface LearningEvent extends Event {
+  skillIds: string[]; // what skills will be practiced/learned
+  isWorkshop: boolean; // structured learning event
+}
+
+export interface LearningEventDetail extends LearningEvent, EventDetail {
+  skills: Skill[];
 }

@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer, DefaultTheme, NavigationContainerRef } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  type NavigationContainerRef,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +23,9 @@ import AchievementToast from '../components/AchievementToast';
 import PhoneEntryScreen from '../screens/auth/PhoneEntryScreen';
 import VerifyCodeScreen from '../screens/auth/VerifyCodeScreen';
 import CreateProfileScreen from '../screens/auth/CreateProfileScreen';
+
+// Home screen
+import MapHomeScreen from '../screens/home/MapHomeScreen';
 
 // Event screens
 import EventListScreen from '../screens/events/EventListScreen';
@@ -64,6 +71,11 @@ import JoinCircleScreen from '../screens/hub/JoinCircleScreen';
 import CircleChatScreen from '../screens/hub/CircleChatScreen';
 import DiscoverScreen from '../screens/hub/DiscoverScreen';
 
+// Learning screens
+import LearningFeedScreen from '../screens/learning/LearningFeedScreen';
+import CreateLearningPostScreen from '../screens/learning/CreateLearningPostScreen';
+import LearningPostDetailScreen from '../screens/learning/LearningPostDetailScreen';
+
 // Onboarding
 import OnboardingScreen, { ONBOARDING_KEY } from '../screens/onboarding/OnboardingScreen';
 
@@ -97,6 +109,33 @@ function useScreenDefaults() {
   };
 }
 
+function HomeStack() {
+  const screenDefaults = useScreenDefaults();
+  return (
+    <Stack.Navigator screenOptions={screenDefaults}>
+      <Stack.Screen name="MapHome" component={MapHomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: '' }} />
+      <Stack.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{ title: 'New Event' }}
+      />
+      <Stack.Screen
+        name="CreateBeacon"
+        component={CreateBeaconScreen}
+        options={{ title: 'Drop Beacon' }}
+      />
+      <Stack.Screen name="MyEvents" component={MyEventsScreen} options={{ title: 'My Events' }} />
+      <Stack.Screen
+        name="EventChat"
+        component={EventChatScreen}
+        options={({ route }: { route: any }) => ({ title: route.params?.title || 'Chat' })}
+      />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: '' }} />
+    </Stack.Navigator>
+  );
+}
+
 function EventsStack() {
   const screenDefaults = useScreenDefaults();
   return (
@@ -104,8 +143,16 @@ function EventsStack() {
       <Stack.Screen name="EventList" component={EventListScreen} options={{ title: 'Events' }} />
       <Stack.Screen name="MyEvents" component={MyEventsScreen} options={{ title: 'My Events' }} />
       <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: '' }} />
-      <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ title: 'New Event' }} />
-      <Stack.Screen name="EventChat" component={EventChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.title || 'Chat' })} />
+      <Stack.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{ title: 'New Event' }}
+      />
+      <Stack.Screen
+        name="EventChat"
+        component={EventChatScreen}
+        options={({ route }: { route: any }) => ({ title: route.params?.title || 'Chat' })}
+      />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: '' }} />
     </Stack.Navigator>
   );
@@ -115,8 +162,16 @@ function BeaconsStack() {
   const screenDefaults = useScreenDefaults();
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
-      <Stack.Screen name="BeaconMap" component={BeaconMapScreen} options={{ title: 'Beacons', headerShown: false }} />
-      <Stack.Screen name="CreateBeacon" component={CreateBeaconScreen} options={{ title: 'Drop Beacon' }} />
+      <Stack.Screen
+        name="BeaconMap"
+        component={BeaconMapScreen}
+        options={{ title: 'Beacons', headerShown: false }}
+      />
+      <Stack.Screen
+        name="CreateBeacon"
+        component={CreateBeaconScreen}
+        options={{ title: 'Drop Beacon' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -126,13 +181,29 @@ function ProfileStack() {
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'You' }} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Edit Profile' }} />
-      <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} options={{ title: 'Blocked Users' }} />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: 'Edit Profile' }}
+      />
+      <Stack.Screen
+        name="BlockedUsers"
+        component={BlockedUsersScreen}
+        options={{ title: 'Blocked Users' }}
+      />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="Invite" component={InviteScreen} options={{ title: 'Invite Friends' }} />
       <Stack.Screen name="Badges" component={BadgesScreen} options={{ title: 'Badges' }} />
-      <Stack.Screen name="MoodTrends" component={MoodTrendsScreen} options={{ title: 'Mood Trends' }} />
-      <Stack.Screen name="WeeklyRecap" component={WeeklyRecapScreen} options={{ title: 'Weekly Recap' }} />
+      <Stack.Screen
+        name="MoodTrends"
+        component={MoodTrendsScreen}
+        options={{ title: 'Mood Trends' }}
+      />
+      <Stack.Screen
+        name="WeeklyRecap"
+        component={WeeklyRecapScreen}
+        options={{ title: 'Weekly Recap' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -144,14 +215,46 @@ function HubStack() {
       <Stack.Screen name="Hub" component={HubScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Habits" component={HabitsScreen} options={{ title: 'Habits' }} />
       <Stack.Screen name="CheckIn" component={CheckInScreen} options={{ title: 'Check In' }} />
-      <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ title: 'Challenges' }} />
-      <Stack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} options={{ title: '' }} />
-      <Stack.Screen name="ChallengeCertificate" component={ChallengeCertificateScreen} options={{ title: '', headerShown: false }} />
-      <Stack.Screen name="CreateChallenge" component={CreateChallengeScreen} options={{ title: 'New Challenge' }} />
-      <Stack.Screen name="Focus" component={FocusScreen} options={{ title: 'Focus', headerShown: false }} />
-      <Stack.Screen name="VibeCheck" component={VibeCheckScreen} options={{ title: '', headerShown: false }} />
-      <Stack.Screen name="StudyRooms" component={StudyRoomsScreen} options={{ title: 'Study Rooms' }} />
-      <Stack.Screen name="PhotoFeed" component={PhotoFeedScreen} options={{ title: 'Proof Feed' }} />
+      <Stack.Screen
+        name="Challenges"
+        component={ChallengesScreen}
+        options={{ title: 'Challenges' }}
+      />
+      <Stack.Screen
+        name="ChallengeDetail"
+        component={ChallengeDetailScreen}
+        options={{ title: '' }}
+      />
+      <Stack.Screen
+        name="ChallengeCertificate"
+        component={ChallengeCertificateScreen}
+        options={{ title: '', headerShown: false }}
+      />
+      <Stack.Screen
+        name="CreateChallenge"
+        component={CreateChallengeScreen}
+        options={{ title: 'New Challenge' }}
+      />
+      <Stack.Screen
+        name="Focus"
+        component={FocusScreen}
+        options={{ title: 'Focus', headerShown: false }}
+      />
+      <Stack.Screen
+        name="VibeCheck"
+        component={VibeCheckScreen}
+        options={{ title: '', headerShown: false }}
+      />
+      <Stack.Screen
+        name="StudyRooms"
+        component={StudyRoomsScreen}
+        options={{ title: 'Study Rooms' }}
+      />
+      <Stack.Screen
+        name="PhotoFeed"
+        component={PhotoFeedScreen}
+        options={{ title: 'Proof Feed' }}
+      />
       <Stack.Screen name="WalkTalk" component={WalkTalkScreen} options={{ title: 'Walk & Talk' }} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: '' }} />
     </Stack.Navigator>
@@ -163,17 +266,73 @@ function SocialStack() {
   return (
     <Stack.Navigator screenOptions={screenDefaults}>
       <Stack.Screen name="Circles" component={CirclesScreen} options={{ title: 'Circles' }} />
-      <Stack.Screen name="CircleDetail" component={CircleDetailScreen} options={({ route }: { route: any }) => ({ title: route.params?.circleName || 'Circle' })} />
-      <Stack.Screen name="CreateCircle" component={CreateCircleScreen} options={{ title: 'New Circle' }} />
-      <Stack.Screen name="JoinCircle" component={JoinCircleScreen} options={{ title: 'Join Circle' }} />
-      <Stack.Screen name="CircleChat" component={CircleChatScreen} options={({ route }: { route: any }) => ({ title: route.params?.circleName ? `${route.params.circleName}` : 'Chat' })} />
-      <Stack.Screen name="Discover" component={DiscoverScreen} options={{ title: 'Discover People' }} />
+      <Stack.Screen
+        name="CircleDetail"
+        component={CircleDetailScreen}
+        options={({ route }: { route: any }) => ({ title: route.params?.circleName || 'Circle' })}
+      />
+      <Stack.Screen
+        name="CreateCircle"
+        component={CreateCircleScreen}
+        options={{ title: 'New Circle' }}
+      />
+      <Stack.Screen
+        name="JoinCircle"
+        component={JoinCircleScreen}
+        options={{ title: 'Join Circle' }}
+      />
+      <Stack.Screen
+        name="CircleChat"
+        component={CircleChatScreen}
+        options={({ route }: { route: any }) => ({
+          title: route.params?.circleName ? `${route.params.circleName}` : 'Chat',
+        })}
+      />
+      <Stack.Screen
+        name="Discover"
+        component={DiscoverScreen}
+        options={{ title: 'Discover People' }}
+      />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: '' }} />
     </Stack.Navigator>
   );
 }
 
-function TabIcon({ name, focused, color, isCenter }: { name: keyof typeof Ionicons.glyphMap; focused: boolean; color: string; isCenter?: boolean }) {
+function LearningStack() {
+  const screenDefaults = useScreenDefaults();
+  return (
+    <Stack.Navigator screenOptions={screenDefaults}>
+      <Stack.Screen
+        name="LearningFeed"
+        component={LearningFeedScreen}
+        options={{ title: 'Learn' }}
+      />
+      <Stack.Screen
+        name="LearningPostDetail"
+        component={LearningPostDetailScreen}
+        options={{ title: 'Post' }}
+      />
+      <Stack.Screen
+        name="CreateLearningPost"
+        component={CreateLearningPostScreen}
+        options={{ title: 'New Post' }}
+      />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ title: '' }} />
+    </Stack.Navigator>
+  );
+}
+
+function TabIcon({
+  name,
+  focused,
+  color,
+  isCenter,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+  isCenter?: boolean;
+}) {
   const iconSize = isCenter ? 26 : 22;
   return (
     <View style={focused ? tabStyles.activeWrap : tabStyles.inactiveWrap}>
@@ -184,10 +343,19 @@ function TabIcon({ name, focused, color, isCenter }: { name: keyof typeof Ionico
 }
 
 const tabStyles = StyleSheet.create({
-  activeWrap: { alignItems: 'center', justifyContent: 'center', position: 'relative', paddingTop: 2 },
+  activeWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    paddingTop: 2,
+  },
   inactiveWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 2 },
   activePill: {
-    position: 'absolute', top: -4, width: 36, height: 36, borderRadius: 18,
+    position: 'absolute',
+    top: -4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(74, 222, 128, 0.1)',
   },
   centerPill: { width: 42, height: 42, borderRadius: 21, top: -6 },
@@ -199,7 +367,7 @@ function MainTabs() {
 
   return (
     <Tab.Navigator
-      initialRouteName="HubTab"
+      initialRouteName="HomeTab"
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -215,26 +383,65 @@ function MainTabs() {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: -2 },
       }}
     >
-      <Tab.Screen name="EventsTab" component={EventsStack} options={{
-        title: 'Events',
-        tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'calendar' : 'calendar-outline'} focused={focused} color={color} />,
-      }} />
-      <Tab.Screen name="BeaconsTab" component={BeaconsStack} options={{
-        title: 'Map',
-        tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'map' : 'map-outline'} focused={focused} color={color} />,
-      }} />
-      <Tab.Screen name="HubTab" component={HubStack} options={{
-        title: 'Hub',
-        tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'flash' : 'flash-outline'} focused={focused} color={color} isCenter />,
-      }} />
-      <Tab.Screen name="SocialTab" component={SocialStack} options={{
-        title: 'Social',
-        tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} color={color} />,
-      }} />
-      <Tab.Screen name="ProfileTab" component={ProfileStack} options={{
-        title: 'You',
-        tabBarIcon: ({ focused, color }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />,
-      }} />
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeStack}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name={focused ? 'map' : 'map-outline'}
+              focused={focused}
+              color={color}
+              isCenter
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="EventsTab"
+        component={EventsStack}
+        options={{
+          title: 'Events',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon
+              name={focused ? 'calendar' : 'calendar-outline'}
+              focused={focused}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="SocialTab"
+        component={SocialStack}
+        options={{
+          title: 'Circles',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="LearningTab"
+        component={LearningStack}
+        options={{
+          title: 'Learn',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'book' : 'book-outline'} focused={focused} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack}
+        options={{
+          title: 'You',
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -290,12 +497,12 @@ export default function RootNavigator() {
     if (!nav) return;
 
     if (data.type === 'event_reminder' || data.type === 'chat_message') {
-      nav.navigate('EventsTab', {
+      nav.navigate('HomeTab', {
         screen: 'EventDetail',
         params: { eventId: data.eventId },
       });
     } else if (data.type === 'beacon_interest') {
-      nav.navigate('BeaconsTab', { screen: 'BeaconMap' });
+      nav.navigate('HomeTab', { screen: 'MapHome' });
     } else if (data.type === 'circle_message') {
       nav.navigate('SocialTab', {
         screen: 'CircleChat',
